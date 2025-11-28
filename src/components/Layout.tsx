@@ -31,8 +31,8 @@ const navigation = [
     href: "/app/clientes", 
     icon: Users,
     subItems: [
-      { name: "CRM", href: "/app/clientes/crm", icon: Users },
-      { name: "Kanban", href: "/app/clientes/kanban", icon: KanbanIcon }
+      { name: "Contatos", href: "/app/clientes/crm", icon: Users },
+      { name: "CRM", href: "/app/clientes/kanban", icon: KanbanIcon }
     ]
   },
   { name: "Agent IA", href: "/app/agent-ia", icon: Bot },

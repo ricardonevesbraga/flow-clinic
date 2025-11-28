@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bot, Sparkles, Save, Loader2, Edit, X, Clock, MessageSquare, Smile } from "lucide-react";
+import { Bot, Sparkles, Save, Loader2, Edit, X, Clock, MessageSquare, Smile, Plus, Trash2, Mail, Bell, FileQuestion } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,11 @@ interface AgentConfig {
   pause_duration: number;
   greeting_message: string;
   closing_message: string;
+  reminder_1_minutes: number;
+  reminder_2_minutes: number;
+  reminder_3_minutes: number;
+  qualification_questions: string[];
+  confirmation_email_body: string;
 }
 
 const personalityLabels: Record<string, string> = {
@@ -44,6 +49,11 @@ export default function AgentIA() {
     pause_duration: 30,
     greeting_message: "Olá! Sou o assistente virtual da clínica. Como posso ajudá-lo hoje?",
     closing_message: "Foi um prazer atendê-lo! Se precisar de algo mais, estou à disposição.",
+    reminder_1_minutes: 15,
+    reminder_2_minutes: 60,
+    reminder_3_minutes: 1440,
+    qualification_questions: [],
+    confirmation_email_body: "<p>Olá, seu agendamento foi confirmado!</p>",
   });
   const [editConfig, setEditConfig] = useState<AgentConfig>(config);
 
@@ -104,11 +114,17 @@ export default function AgentIA() {
         pause_duration: editConfig.pause_duration,
         greeting_message: editConfig.greeting_message,
         closing_message: editConfig.closing_message,
-      };
+        reminder_1_minutes: editConfig.reminder_1_minutes,
+        reminder_2_minutes: editConfig.reminder_2_minutes,
+        reminder_3_minutes: editConfig.reminder_3_minutes,
+        qualification_questions: editConfig.qualification_questions,
+        confirmation_email_body: editConfig.confirmation_email_body,
+      } as any;
 
       if (config.id) {
         const { error } = await supabase
           .from("agent_ia_config")
+          // @ts-ignore
           .update(configData)
           .eq("id", config.id);
 
@@ -116,6 +132,7 @@ export default function AgentIA() {
       } else {
         const { data, error } = await supabase
           .from("agent_ia_config")
+          // @ts-ignore
           .insert(configData)
           .select()
           .single();
@@ -258,6 +275,58 @@ export default function AgentIA() {
                 </div>
               </div>
             </div>
+
+            {/* Lembretes */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+                <Bell className="h-5 w-5 text-accent" />
+                Lembretes de Agendamento
+              </h3>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <span className="text-sm font-medium text-muted-foreground">1º Lembrete</span>
+                  <p className="text-lg font-semibold text-foreground">{config.reminder_1_minutes} minutos antes</p>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-sm font-medium text-muted-foreground">2º Lembrete</span>
+                  <p className="text-lg font-semibold text-foreground">{config.reminder_2_minutes} minutos antes</p>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-sm font-medium text-muted-foreground">3º Lembrete</span>
+                  <p className="text-lg font-semibold text-foreground">{config.reminder_3_minutes} minutos antes</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Perguntas de Qualificação */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+                <FileQuestion className="h-5 w-5 text-accent" />
+                Perguntas de Qualificação
+              </h3>
+              {config.qualification_questions && config.qualification_questions.length > 0 ? (
+                <ul className="list-disc list-inside space-y-2">
+                  {config.qualification_questions.map((q, i) => (
+                    <li key={i} className="text-foreground">{q}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted-foreground italic">Nenhuma pergunta configurada.</p>
+              )}
+            </div>
+
+            {/* Email de Confirmação */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+                <Mail className="h-5 w-5 text-accent" />
+                Email de Confirmação
+              </h3>
+              <div className="bg-accent/5 border border-accent/20 rounded-lg p-4">
+                <pre className="text-sm text-foreground whitespace-pre-wrap font-mono overflow-x-auto">
+                  {config.confirmation_email_body}
+                </pre>
+              </div>
+            </div>
           </Card>
         </>
       ) : (
@@ -363,6 +432,113 @@ export default function AgentIA() {
                 }
               />
             </div>
+          </div>
+
+          {/* Lembretes */}
+          <div className="mt-8 space-y-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Bell className="h-5 w-5 text-accent" />
+              Lembretes de Agendamento (minutos antes)
+            </h3>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="reminder_1">1º Lembrete</Label>
+                <Input
+                  id="reminder_1"
+                  type="number"
+                  min="1"
+                  value={editConfig.reminder_1_minutes}
+                  onChange={(e) => setEditConfig({ ...editConfig, reminder_1_minutes: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reminder_2">2º Lembrete</Label>
+                <Input
+                  id="reminder_2"
+                  type="number"
+                  min="1"
+                  value={editConfig.reminder_2_minutes}
+                  onChange={(e) => setEditConfig({ ...editConfig, reminder_2_minutes: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reminder_3">3º Lembrete</Label>
+                <Input
+                  id="reminder_3"
+                  type="number"
+                  min="1"
+                  value={editConfig.reminder_3_minutes}
+                  onChange={(e) => setEditConfig({ ...editConfig, reminder_3_minutes: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Perguntas de Qualificação */}
+          <div className="mt-8 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <FileQuestion className="h-5 w-5 text-accent" />
+                Perguntas de Qualificação
+              </h3>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setEditConfig({
+                  ...editConfig,
+                  qualification_questions: [...(editConfig.qualification_questions || []), ""]
+                })}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Pergunta
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {editConfig.qualification_questions?.map((question, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={question}
+                    onChange={(e) => {
+                      const newQuestions = [...(editConfig.qualification_questions || [])];
+                      newQuestions[index] = e.target.value;
+                      setEditConfig({ ...editConfig, qualification_questions: newQuestions });
+                    }}
+                    placeholder="Digite a pergunta..."
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      const newQuestions = [...(editConfig.qualification_questions || [])];
+                      newQuestions.splice(index, 1);
+                      setEditConfig({ ...editConfig, qualification_questions: newQuestions });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+              {(!editConfig.qualification_questions || editConfig.qualification_questions.length === 0) && (
+                <p className="text-sm text-muted-foreground italic">Nenhuma pergunta adicionada.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Email de Confirmação */}
+          <div className="mt-8 space-y-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Mail className="h-5 w-5 text-accent" />
+              Email de Confirmação (HTML)
+            </h3>
+            <Textarea
+              rows={10}
+              value={editConfig.confirmation_email_body}
+              onChange={(e) => setEditConfig({ ...editConfig, confirmation_email_body: e.target.value })}
+              className="font-mono text-sm"
+              placeholder="<html>...</html>"
+            />
           </div>
         </Card>
       )}
