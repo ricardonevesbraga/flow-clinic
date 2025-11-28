@@ -1,4 +1,4 @@
-import { MessageSquare, Loader2, QrCode, Copy } from "lucide-react";
+import { MessageSquare, Loader2, QrCode, Copy, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
@@ -54,6 +64,8 @@ export default function Integrations() {
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
   const [isListingInstance, setIsListingInstance] = useState(false);
   const [instanceDetails, setInstanceDetails] = useState<any>(null);
+  const [isDeletingInstance, setIsDeletingInstance] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Carregar instância existente do banco ao montar o componente
   useEffect(() => {
@@ -347,6 +359,72 @@ export default function Integrations() {
     setFormData({ ...formData, phone: formatted });
   };
 
+  const handleDeleteInstance = async () => {
+    if (!dbInstance) {
+      toast.error("Nenhuma instância encontrada");
+      return;
+    }
+
+    try {
+      setIsDeletingInstance(true);
+      
+      const payload = {
+        instanceId: dbInstance.instance_id,
+        token: dbInstance.token,
+        instanceName: dbInstance.instance_name,
+        adminField01: dbInstance.admin_field_01,
+        phone: dbInstance.phone,
+        organizationId: organization?.id,
+        organizationName: organization?.name,
+      };
+      
+      console.log("Apagando instância, payload:", payload);
+      
+      const response = await fetch("https://webhook.n8nlabz.com.br/webhook/apagar-instancia", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Erro ao apagar instância");
+      }
+
+      const result = await response.json();
+      console.log("Resultado apagar instância:", result);
+      
+      // Deletar do banco de dados local
+      const { error: deleteError } = await supabase
+        .from("whatsapp_instances")
+        .delete()
+        .eq("id", dbInstance.id);
+
+      if (deleteError) {
+        console.error("Erro ao deletar do banco:", deleteError);
+        toast.error("Erro ao remover instância do banco de dados");
+        return;
+      }
+
+      // Limpar estados
+      setInstanceDetails(null);
+      setDbInstance(null);
+      setInstanceData(null);
+      setShowPairingCard(false);
+      setShowDeleteDialog(false);
+      
+      toast.success("Instância apagada com sucesso!");
+      
+    } catch (error: any) {
+      console.error("Erro ao apagar instância:", error);
+      toast.error(error.message || "Erro ao apagar instância");
+    } finally {
+      setIsDeletingInstance(false);
+    }
+  };
+
   const handleListInstance = async () => {
     if (!dbInstance) {
       toast.error("Nenhuma instância encontrada");
@@ -587,8 +665,59 @@ export default function Integrations() {
                 </div>
               </div>
 
+              {/* Botão Apagar */}
+              <div className="flex gap-3 pt-4 border-t border-border">
+                <Button
+                  onClick={() => setShowDeleteDialog(true)}
+                  variant="destructive"
+                  className="w-full gap-2"
+                  disabled={isDeletingInstance}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Apagar Instância
+                </Button>
+              </div>
+
             </div>
           </Card>
+
+          {/* Dialog de Confirmação */}
+          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Apagar Instância do WhatsApp?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação não pode ser desfeita. A instância <strong>{instanceDetails?.name}</strong> será 
+                  permanentemente removida e você precisará conectar novamente.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isDeletingInstance}>
+                  Cancelar
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleDeleteInstance();
+                  }}
+                  disabled={isDeletingInstance}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isDeletingInstance ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Apagando...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Apagar
+                    </>
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     );
