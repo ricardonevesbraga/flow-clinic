@@ -21,7 +21,8 @@ interface AgentConfig {
   id?: string;
   agent_name: string;
   personality: string;
-  pause_duration: number;
+  pause_duration_seconds: number;
+  customer_pause_duration_seconds: number;
   greeting_message: string;
   closing_message: string;
   openai_api_key?: string | null;
@@ -47,10 +48,19 @@ export default function AgentIA() {
   const [isGeneratingEmail, setIsGeneratingEmail] = useState(false);
   const [emailPrompt, setEmailPrompt] = useState("");
   const [showEmailGenerator, setShowEmailGenerator] = useState(false);
+  
+  // Estados para unidades de tempo dos lembretes
+  const [reminder1Value, setReminder1Value] = useState(15);
+  const [reminder1Unit, setReminder1Unit] = useState<'minutos' | 'horas' | 'dias'>('minutos');
+  const [reminder2Value, setReminder2Value] = useState(1);
+  const [reminder2Unit, setReminder2Unit] = useState<'minutos' | 'horas' | 'dias'>('horas');
+  const [reminder3Value, setReminder3Value] = useState(1);
+  const [reminder3Unit, setReminder3Unit] = useState<'minutos' | 'horas' | 'dias'>('dias');
   const [config, setConfig] = useState<AgentConfig>({
     agent_name: "Assistente Virtual",
     personality: "profissional",
-    pause_duration: 30,
+    pause_duration_seconds: 1800, // 30 minutos em segundos
+    customer_pause_duration_seconds: 300, // 5 minutos em segundos
     greeting_message: "Olá! Sou o assistente virtual da clínica. Como posso ajudá-lo hoje?",
     closing_message: "Foi um prazer atendê-lo! Se precisar de algo mais, estou à disposição.",
     openai_api_key: null,
@@ -65,6 +75,79 @@ export default function AgentIA() {
   useEffect(() => {
     loadConfig();
   }, [profile?.organization_id]);
+
+  // Funções auxiliares para converter segundos para minutos e vice-versa
+  const secondsToMinutes = (seconds: number): number => {
+    return Math.round(seconds / 60);
+  };
+
+  const minutesToSeconds = (minutes: number): number => {
+    return minutes * 60;
+  };
+
+  // Funções auxiliares para converter unidades de tempo
+  const minutesToUnit = (minutes: number, unit: 'minutos' | 'horas' | 'dias'): number => {
+    switch (unit) {
+      case 'minutos':
+        return minutes;
+      case 'horas':
+        return Math.round(minutes / 60);
+      case 'dias':
+        return Math.round(minutes / (60 * 24));
+      default:
+        return minutes;
+    }
+  };
+
+  const unitToMinutes = (value: number, unit: 'minutos' | 'horas' | 'dias'): number => {
+    switch (unit) {
+      case 'minutos':
+        return value;
+      case 'horas':
+        return value * 60;
+      case 'dias':
+        return value * 60 * 24;
+      default:
+        return value;
+    }
+  };
+
+  const formatReminderDisplay = (minutes: number): string => {
+    if (minutes < 60) {
+      return `${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
+    } else if (minutes < 1440) {
+      const hours = Math.round(minutes / 60);
+      return `${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+    } else {
+      const days = Math.round(minutes / 1440);
+      return `${days} ${days === 1 ? 'dia' : 'dias'}`;
+    }
+  };
+
+  // Atualizar valores quando editConfig mudar
+  useEffect(() => {
+    if (isEditing) {
+      // Detectar melhor unidade para cada lembrete
+      const detectBestUnit = (minutes: number): 'minutos' | 'horas' | 'dias' => {
+        if (minutes % 1440 === 0) return 'dias';
+        if (minutes % 60 === 0) return 'horas';
+        return 'minutos';
+      };
+
+      const unit1 = detectBestUnit(editConfig.reminder_1_minutes);
+      const unit2 = detectBestUnit(editConfig.reminder_2_minutes);
+      const unit3 = detectBestUnit(editConfig.reminder_3_minutes);
+
+      setReminder1Unit(unit1);
+      setReminder1Value(minutesToUnit(editConfig.reminder_1_minutes, unit1));
+      
+      setReminder2Unit(unit2);
+      setReminder2Value(minutesToUnit(editConfig.reminder_2_minutes, unit2));
+      
+      setReminder3Unit(unit3);
+      setReminder3Value(minutesToUnit(editConfig.reminder_3_minutes, unit3));
+    }
+  }, [isEditing, editConfig.reminder_1_minutes, editConfig.reminder_2_minutes, editConfig.reminder_3_minutes]);
 
   const generateEmailWithAI = async () => {
     if (!emailPrompt.trim()) {
@@ -181,7 +264,8 @@ export default function AgentIA() {
         organization_id: profile.organization_id,
         agent_name: editConfig.agent_name,
         personality: editConfig.personality,
-        pause_duration: editConfig.pause_duration,
+        pause_duration_seconds: editConfig.pause_duration_seconds,
+        customer_pause_duration_seconds: editConfig.customer_pause_duration_seconds,
         greeting_message: editConfig.greeting_message,
         closing_message: editConfig.closing_message,
         // openai_api_key não é salvo aqui - apenas super admin pode configurar
@@ -310,10 +394,24 @@ export default function AgentIA() {
                   <span className="font-medium">Tempo de Pausa</span>
                 </div>
                 <p className="text-lg font-semibold text-foreground pl-6">
-                  {config.pause_duration} minutos
+                  {secondsToMinutes(config.pause_duration_seconds)} minutos
                 </p>
                 <p className="text-xs text-muted-foreground pl-6">
                   Pausa quando atendente humano assume
+                </p>
+              </div>
+
+              {/* Pausa por Solicitação do Cliente */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                  <Clock className="h-4 w-4" />
+                  <span className="font-medium">Pausa por Solicitação</span>
+                </div>
+                <p className="text-lg font-semibold text-foreground pl-6">
+                  {secondsToMinutes(config.customer_pause_duration_seconds)} minutos
+                </p>
+                <p className="text-xs text-muted-foreground pl-6">
+                  Pausa quando cliente solicita
                 </p>
               </div>
 
@@ -357,15 +455,15 @@ export default function AgentIA() {
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="space-y-2">
                   <span className="text-sm font-medium text-muted-foreground">1º Lembrete</span>
-                  <p className="text-lg font-semibold text-foreground">{config.reminder_1_minutes} minutos antes</p>
+                  <p className="text-lg font-semibold text-foreground">{formatReminderDisplay(config.reminder_1_minutes)} antes</p>
                 </div>
                 <div className="space-y-2">
                   <span className="text-sm font-medium text-muted-foreground">2º Lembrete</span>
-                  <p className="text-lg font-semibold text-foreground">{config.reminder_2_minutes} minutos antes</p>
+                  <p className="text-lg font-semibold text-foreground">{formatReminderDisplay(config.reminder_2_minutes)} antes</p>
                 </div>
                 <div className="space-y-2">
                   <span className="text-sm font-medium text-muted-foreground">3º Lembrete</span>
-                  <p className="text-lg font-semibold text-foreground">{config.reminder_3_minutes} minutos antes</p>
+                  <p className="text-lg font-semibold text-foreground">{formatReminderDisplay(config.reminder_3_minutes)} antes</p>
                 </div>
               </div>
             </div>
@@ -484,13 +582,33 @@ export default function AgentIA() {
                 type="number"
                 min="1"
                 max="1440"
-                value={editConfig.pause_duration}
-                onChange={(e) =>
-                  setEditConfig({ ...editConfig, pause_duration: parseInt(e.target.value) || 30 })
-                }
+                value={secondsToMinutes(editConfig.pause_duration_seconds)}
+                onChange={(e) => {
+                  const minutes = parseInt(e.target.value) || 30;
+                  setEditConfig({ ...editConfig, pause_duration_seconds: minutesToSeconds(minutes) });
+                }}
               />
               <p className="text-xs text-muted-foreground">
                 Quanto tempo o agent deve pausar quando um atendente humano assumir
+              </p>
+            </div>
+
+            {/* Pausa por Solicitação do Cliente */}
+            <div className="space-y-2">
+              <Label htmlFor="customer_pause_duration">Pausa por Solicitação do Cliente (minutos) *</Label>
+              <Input
+                id="customer_pause_duration"
+                type="number"
+                min="1"
+                max="1440"
+                value={secondsToMinutes(editConfig.customer_pause_duration_seconds)}
+                onChange={(e) => {
+                  const minutes = parseInt(e.target.value) || 5;
+                  setEditConfig({ ...editConfig, customer_pause_duration_seconds: minutesToSeconds(minutes) });
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Quanto tempo o agent deve pausar quando o cliente solicitar
               </p>
             </div>
 
@@ -525,38 +643,115 @@ export default function AgentIA() {
           <div className="mt-8 space-y-4">
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <Bell className="h-5 w-5 text-accent" />
-              Lembretes de Agendamento (minutos antes)
+              Lembretes de Agendamento
             </h3>
+            <p className="text-sm text-muted-foreground">
+              Configure quando os lembretes serão enviados antes do agendamento
+            </p>
             <div className="grid gap-4 md:grid-cols-3">
+              {/* 1º Lembrete */}
               <div className="space-y-2">
                 <Label htmlFor="reminder_1">1º Lembrete</Label>
-                <Input
-                  id="reminder_1"
-                  type="number"
-                  min="1"
-                  value={editConfig.reminder_1_minutes}
-                  onChange={(e) => setEditConfig({ ...editConfig, reminder_1_minutes: parseInt(e.target.value) || 0 })}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="reminder_1"
+                    type="number"
+                    min="1"
+                    value={reminder1Value}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 1;
+                      setReminder1Value(val);
+                      setEditConfig({ ...editConfig, reminder_1_minutes: unitToMinutes(val, reminder1Unit) });
+                    }}
+                    className="w-24"
+                  />
+                  <Select
+                    value={reminder1Unit}
+                    onValueChange={(value: 'minutos' | 'horas' | 'dias') => {
+                      setReminder1Unit(value);
+                      setEditConfig({ ...editConfig, reminder_1_minutes: unitToMinutes(reminder1Value, value) });
+                    }}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="minutos">Minutos</SelectItem>
+                      <SelectItem value="horas">Horas</SelectItem>
+                      <SelectItem value="dias">Dias</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
+              {/* 2º Lembrete */}
               <div className="space-y-2">
                 <Label htmlFor="reminder_2">2º Lembrete</Label>
-                <Input
-                  id="reminder_2"
-                  type="number"
-                  min="1"
-                  value={editConfig.reminder_2_minutes}
-                  onChange={(e) => setEditConfig({ ...editConfig, reminder_2_minutes: parseInt(e.target.value) || 0 })}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="reminder_2"
+                    type="number"
+                    min="1"
+                    value={reminder2Value}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 1;
+                      setReminder2Value(val);
+                      setEditConfig({ ...editConfig, reminder_2_minutes: unitToMinutes(val, reminder2Unit) });
+                    }}
+                    className="w-24"
+                  />
+                  <Select
+                    value={reminder2Unit}
+                    onValueChange={(value: 'minutos' | 'horas' | 'dias') => {
+                      setReminder2Unit(value);
+                      setEditConfig({ ...editConfig, reminder_2_minutes: unitToMinutes(reminder2Value, value) });
+                    }}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="minutos">Minutos</SelectItem>
+                      <SelectItem value="horas">Horas</SelectItem>
+                      <SelectItem value="dias">Dias</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
+              {/* 3º Lembrete */}
               <div className="space-y-2">
                 <Label htmlFor="reminder_3">3º Lembrete</Label>
-                <Input
-                  id="reminder_3"
-                  type="number"
-                  min="1"
-                  value={editConfig.reminder_3_minutes}
-                  onChange={(e) => setEditConfig({ ...editConfig, reminder_3_minutes: parseInt(e.target.value) || 0 })}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="reminder_3"
+                    type="number"
+                    min="1"
+                    value={reminder3Value}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 1;
+                      setReminder3Value(val);
+                      setEditConfig({ ...editConfig, reminder_3_minutes: unitToMinutes(val, reminder3Unit) });
+                    }}
+                    className="w-24"
+                  />
+                  <Select
+                    value={reminder3Unit}
+                    onValueChange={(value: 'minutos' | 'horas' | 'dias') => {
+                      setReminder3Unit(value);
+                      setEditConfig({ ...editConfig, reminder_3_minutes: unitToMinutes(reminder3Value, value) });
+                    }}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="minutos">Minutos</SelectItem>
+                      <SelectItem value="horas">Horas</SelectItem>
+                      <SelectItem value="dias">Dias</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>

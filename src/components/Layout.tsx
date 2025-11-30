@@ -14,7 +14,8 @@ import {
   ChevronDown,
   ChevronRight,
   Kanban as KanbanIcon,
-  Bot
+  Bot,
+  BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -36,6 +37,7 @@ const navigation = [
     ]
   },
   { name: "Agent IA", href: "/app/agent-ia", icon: Bot },
+  { name: "Conhecimento do Agent", href: "/app/conhecimento", icon: BookOpen },
   { name: "Integração", href: "/app/integrations", icon: Plug },
 ];
 

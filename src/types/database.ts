@@ -192,7 +192,8 @@ export interface Database {
           updated_at: string
           agent_name: string
           personality: string
-          pause_duration: number
+          pause_duration_seconds: number
+          customer_pause_duration_seconds: number
           greeting_message: string
           closing_message: string
           openai_api_key: string | null
@@ -205,7 +206,8 @@ export interface Database {
           updated_at?: string
           agent_name?: string
           personality?: string
-          pause_duration?: number
+          pause_duration_seconds?: number
+          customer_pause_duration_seconds?: number
           greeting_message?: string
           closing_message?: string
           openai_api_key?: string | null
@@ -218,7 +220,8 @@ export interface Database {
           updated_at?: string
           agent_name?: string
           personality?: string
-          pause_duration?: number
+          pause_duration_seconds?: number
+          customer_pause_duration_seconds?: number
           greeting_message?: string
           closing_message?: string
           openai_api_key?: string | null
@@ -240,6 +243,7 @@ export interface Database {
           status: 'pending' | 'connected' | 'disconnected' | 'error'
           qr_code: string | null
           pairing_code: string | null
+          webhook_url: string | null
         }
         Insert: {
           id?: string
@@ -255,6 +259,7 @@ export interface Database {
           status?: 'pending' | 'connected' | 'disconnected' | 'error'
           qr_code?: string | null
           pairing_code?: string | null
+          webhook_url?: string | null
         }
         Update: {
           id?: string
@@ -270,6 +275,7 @@ export interface Database {
           status?: 'pending' | 'connected' | 'disconnected' | 'error'
           qr_code?: string | null
           pairing_code?: string | null
+          webhook_url?: string | null
         }
       }
     }
