@@ -39,60 +39,10 @@ export default function Conhecimento() {
   const [isDeletingDocument, setIsDeletingDocument] = useState(false);
   const [documentToView, setDocumentToView] = useState<any>(null);
   const [isLoadingDocumentContent, setIsLoadingDocumentContent] = useState(false);
-  const [currentTableName, setCurrentTableName] = useState<string | null>(null);
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
 
-  // Função para formatar slug: trocar - por _ e remover timestamp
-  const formatSlugForTable = (slug: string): string => {
-    console.log("🔄 Formatando slug:", slug);
-    
-    // Remove timestamp (números no final após o último hífen)
-    const slugWithoutTimestamp = slug.replace(/-\d+$/, '');
-    console.log("  → Sem timestamp:", slugWithoutTimestamp);
-    
-    // Troca - por _
-    const formattedSlug = slugWithoutTimestamp.replace(/-/g, '_');
-    console.log("  → Formatado:", formattedSlug);
-    
-    return formattedSlug;
-  };
-
-  // Função para testar diferentes variações do nome da tabela
-  const testTableVariations = async (slug: string) => {
-    const variations = [
-      `documents_${formatSlugForTable(slug)}`,                     // documents_clinica_gabriella (INGLÊS - PRIORIDADE)
-      `documentos_${formatSlugForTable(slug)}`,                    // documentos_clinica_gabriella
-      `documents_${slug.replace(/-/g, '_')}`,                      // documents_clinica_gabriella_1764197915380
-      `documentos_${slug.replace(/-/g, '_')}`,                     // documentos_clinica_gabriella_1764197915380
-      `documents_${slug.replace(/-/g, '')}`,                       // documents_clinicagabriella1764197915380
-    ];
-
-    console.log("🧪 Testando variações de nome de tabela:");
-    
-    for (const tableName of variations) {
-      try {
-        console.log(`  Testando: ${tableName}...`);
-        const { data, error } = await supabase
-          .from(tableName)
-          .select('count', { count: 'exact', head: true });
-        
-        if (!error) {
-          console.log(`  ✅ ENCONTRADA: ${tableName}`);
-          return tableName;
-        } else if (error.code !== '42P01' && error.code !== 'PGRST205') {
-          console.log(`  ⚠️ Erro diferente em ${tableName}:`, error);
-        }
-      } catch (e) {
-        // Ignora
-      }
-    }
-    
-    console.log("  ❌ Nenhuma variação encontrada");
-    return null;
-  };
-
-  // Carregar documentos da tabela dinâmica
+  // Carregar documentos da tabela geral filtrados por organização
   const loadDocuments = async () => {
     if (!organization?.slug) {
       console.log("❌ Organization slug não encontrado");
@@ -103,55 +53,41 @@ export default function Conhecimento() {
       setIsLoadingDocuments(true);
       
       console.log("=== DEBUG DOCUMENTOS ===");
-      console.log("Organization completa:", organization);
-      console.log("Slug original:", organization.slug);
+      console.log("Organization:", organization.name);
+      console.log("Slug:", organization.slug);
+      console.log("Buscando em: documents_geral");
+      console.log("Filtro: metadata->>'organizacao' =", organization.slug);
       
-      // Primeiro, tenta encontrar a tabela correta
-      const correctTableName = await testTableVariations(organization.slug);
-      
-      if (!correctTableName) {
-        console.log("⚠️ Nenhuma tabela de documentos encontrada para esta organização");
-        console.log("💡 A tabela será criada automaticamente quando você fizer o primeiro upload");
-        setDocuments([]);
-        setIsLoadingDocuments(false);
-        return;
-      }
-      
-      console.log("✅ Usando tabela:", correctTableName);
-      console.log("=======================");
-
-      // Salvar nome da tabela para uso posterior
-      setCurrentTableName(correctTableName);
-
-      // Buscar documentos na tabela encontrada (sem ordenação por enquanto)
+      // Buscar documentos da tabela geral filtrados por organização
       const { data, error } = await supabase
-        .from(correctTableName)
-        .select('*');
+        .from("documents_geral")
+        .select('*')
+        .eq('metadata->>organizacao', organization.slug);
 
       if (error) {
         console.error("❌ Erro ao buscar documentos:", error);
         throw error;
       }
 
-      console.log("✅ Documentos encontrados:", data);
-      console.log("Quantidade:", data?.length || 0);
+      console.log("✅ Documentos encontrados:", data?.length || 0);
       
       if (data && data.length > 0) {
         console.log("📋 Estrutura do primeiro documento:", Object.keys(data[0]));
-        console.log("📄 Primeiro documento completo:", data[0]);
+        console.log("📄 Primeiro documento:", data[0]);
       }
       
-      // Filtrar documentos únicos por título
+      // Filtrar documentos únicos por título (títulos iguais = mesmo arquivo)
       const uniqueDocuments = data ? Array.from(
         new Map(
           data.map(doc => [
-            doc.titulo || doc.title || "", // Chave: título do documento
+            doc.titulo, // Chave: título do documento
             doc // Valor: documento completo
           ])
         ).values()
       ) : [];
       
-      console.log("📚 Documentos únicos (sem duplicatas):", uniqueDocuments.length);
+      console.log("📚 Documentos únicos (títulos distintos):", uniqueDocuments.length);
+      console.log("=======================");
       
       setDocuments(uniqueDocuments);
       
@@ -168,57 +104,53 @@ export default function Conhecimento() {
     loadDocuments();
   }, [organization?.slug]);
 
-  // Função para carregar conteúdo completo de um documento (todas as linhas)
+  // Função para carregar conteúdo completo de um documento (todas as linhas com o mesmo título)
   const handleViewDocumentDetails = async (doc: any) => {
-    if (!currentTableName) {
-      toast.error("Tabela não encontrada");
+    if (!organization?.slug) {
+      toast.error("Organização não encontrada");
       return;
     }
 
     try {
       setIsLoadingDocumentContent(true);
       
-      const titulo = doc.titulo || doc.title || "";
+      const titulo = doc.titulo;
       
       console.log("🔍 === BUSCAR DETALHES DO DOCUMENTO ===");
       console.log("Documento:", doc);
       console.log("Título:", titulo);
-      console.log("Tabela:", currentTableName);
+      console.log("Tabela: documents_geral");
+      console.log("Filtro 1: metadata->>'organizacao' =", organization.slug);
+      console.log("Filtro 2: titulo =", titulo);
 
-      // Buscar TODAS as linhas com este título
+      // Buscar TODAS as linhas com este título da mesma organização
       const { data, error } = await supabase
-        .from(currentTableName)
+        .from("documents_geral")
         .select('*')
+        .eq('metadata->>organizacao', organization.slug)
         .eq('titulo', titulo);
 
-      console.log("Query executada para titulo =", titulo);
+      console.log("Query executada");
       console.log("Resultado:", data);
       console.log("Erro:", error);
 
       if (error) {
         console.error("❌ Erro ao buscar conteúdo:", error);
-        console.error("Código:", error.code);
-        console.error("Mensagem:", error.message);
-        console.error("Detalhes:", error.details);
         throw error;
       }
 
-      console.log(`✅ Encontradas ${data?.length || 0} linhas para este documento`);
+      console.log(`✅ Encontradas ${data?.length || 0} partes para este documento`);
 
       if (data && data.length > 0) {
-        console.log("Primeira linha:", data[0]);
+        console.log("Primeira parte:", data[0]);
         console.log("Campos disponíveis:", Object.keys(data[0]));
       }
 
-      // Combinar todo o conteúdo (sem separador visual)
+      // Combinar todo o conteúdo (títulos iguais = mesmo arquivo)
       const combinedContent = data
-        ?.map(row => {
-          const content = row.content || row.pageContent || "";
-          console.log("Conteúdo da linha:", content.substring(0, 100) + "...");
-          return content;
-        })
+        ?.map(row => row.content || "")
         .filter(content => content.trim())
-        .join("\n\n"); // Apenas espaçamento duplo entre partes
+        .join("\n\n");
 
       // Criar documento agregado
       const aggregatedDoc = {
@@ -229,40 +161,37 @@ export default function Conhecimento() {
 
       console.log("📄 Conteúdo combinado:", combinedContent?.length, "caracteres");
       console.log("📊 Total de partes:", aggregatedDoc.pageCount);
+      console.log("=======================");
       
       setDocumentToView(aggregatedDoc);
 
     } catch (error: any) {
       console.error("❌ ERRO COMPLETO:", error);
-      console.error("Stack:", error.stack);
       toast.error("Erro ao carregar conteúdo do documento: " + (error.message || "Erro desconhecido"));
     } finally {
       setIsLoadingDocumentContent(false);
     }
   };
 
-  // Função para apagar documento
+  // Função para apagar documento (todas as partes com o mesmo título)
   const handleDeleteDocument = async () => {
     if (!documentToDelete || !organization?.slug) return;
 
     try {
       setIsDeletingDocument(true);
 
-      // Formatar nome da tabela
-      const formattedSlug = formatSlugForTable(organization.slug);
-      const tableName = `documents_${formattedSlug}`;
-      
-      // Pegar o título do documento
-      const titulo = documentToDelete.titulo || documentToDelete.title || "";
+      const titulo = documentToDelete.titulo;
 
       console.log("🗑️ Deletando documento:");
-      console.log("  Tabela:", tableName);
+      console.log("  Tabela: documents_geral");
       console.log("  Título:", titulo);
+      console.log("  Organização:", organization.slug);
 
       // Enviar para webhook de deleção
       const payload = {
-        tableName: tableName,
+        tableName: "documents_geral",
         titulo: titulo,
+        organizacao: organization.slug,
         organizationId: organization.id,
         organizationName: organization.name,
       };
@@ -299,9 +228,9 @@ export default function Conhecimento() {
     }
   };
 
-  // Função para deletar todos os documentos
+  // Função para deletar todos os documentos da organização
   const handleDeleteAll = async () => {
-    if (!currentTableName || !organization) {
+    if (!organization?.slug) {
       toast.error("Informações da organização não encontradas");
       return;
     }
@@ -309,11 +238,13 @@ export default function Conhecimento() {
     try {
       setIsDeletingAll(true);
 
-      console.log("🗑️ Deletando TODOS os documentos");
-      console.log("Tabela:", currentTableName);
+      console.log("🗑️ Deletando TODOS os documentos da organização");
+      console.log("Tabela: documents_geral");
+      console.log("Organização:", organization.slug);
 
       const payload = {
-        tableName: currentTableName,
+        tableName: "documents_geral",
+        organizacao: organization.slug,
         organizationId: organization.id,
         organizationName: organization.name,
       };
@@ -667,7 +598,7 @@ export default function Conhecimento() {
                       {/* Título e Info */}
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-foreground text-base leading-tight line-clamp-2 mb-2 group-hover:text-accent transition-colors">
-                          {doc.titulo || doc.title || "Documento sem título"}
+                          {doc.titulo || "Documento sem título"}
                         </h4>
                         
                         {/* Data */}
@@ -682,6 +613,18 @@ export default function Conhecimento() {
                                 month: 'long',
                                 year: 'numeric'
                               })}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Metadata da organização */}
+                        {doc.metadata?.organizacao && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 mt-1">
+                            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <span className="truncate">
+                              {doc.metadata.organizacao}
                             </span>
                           </div>
                         )}
@@ -815,7 +758,7 @@ export default function Conhecimento() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-accent" />
-              {documentToView?.titulo || documentToView?.title || "Documento"}
+              {documentToView?.titulo || "Documento"}
             </DialogTitle>
             <DialogDescription>
               Conteúdo extraído do documento PDF
@@ -824,9 +767,9 @@ export default function Conhecimento() {
           
           <div className="flex-1 overflow-y-auto">
             <div className="bg-secondary/30 border border-border rounded-lg p-6">
-              {documentToView?.content || documentToView?.pageContent ? (
+              {documentToView?.content ? (
                 <pre className="text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed">
-                  {documentToView.content || documentToView.pageContent}
+                  {documentToView.content}
                 </pre>
               ) : (
                 <div className="text-center py-12 text-muted-foreground">
@@ -836,11 +779,11 @@ export default function Conhecimento() {
               )}
             </div>
             
-            {(documentToView?.content || documentToView?.pageContent) && (
+            {documentToView?.content && (
               <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
                 <Sparkles className="h-4 w-4 text-accent" />
                 <span>
-                  {(documentToView.content || documentToView.pageContent).length} caracteres indexados
+                  {documentToView.content.length} caracteres indexados
                 </span>
               </div>
             )}
@@ -860,7 +803,7 @@ export default function Conhecimento() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o documento <strong>"{documentToDelete?.titulo || documentToDelete?.title}"</strong>?
+              Tem certeza que deseja excluir o documento <strong>"{documentToDelete?.titulo}"</strong>?
               <br />
               <br />
               Esta ação não pode ser desfeita e o documento será removido permanentemente da base de conhecimento do Agent IA.
