@@ -22,7 +22,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', userId)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Erro ao buscar perfil:', profileError);
+        toast.error('Perfil não encontrado. Entre em contato com o administrador.');
+        setProfile(null);
+        setOrganization(null);
+        await supabase.auth.signOut();
+        return;
+      }
+      
       setProfile(profileData);
 
       // Buscar organization (apenas se não for super admin)
