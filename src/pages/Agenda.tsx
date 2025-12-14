@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Calendar, ChevronLeft, ChevronRight, Clock, User, Plus, RefreshCw, Settings } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Clock, User, Plus, RefreshCw, Settings, MessageSquare, FileText } from "lucide-react";
+import { formatPhoneNumber } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useOrganization } from "@/hooks/useOrganization";
 import {
@@ -73,6 +74,7 @@ export default function Agenda() {
   const [workSchedule, setWorkSchedule] = useState<WorkSchedule | null>(null);
   const [isLoadingSchedules, setIsLoadingSchedules] = useState(true);
   const [consultationDuration, setConsultationDuration] = useState<number>(30);
+  const [resumoPatient, setResumoPatient] = useState<any | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -501,6 +503,7 @@ export default function Agenda() {
       time: time,
       endTime: endTime,
       patient: apt.patient_name,
+      patientId: apt.patient_id,
       type: apt.type,
       status: apt.status as "confirmed" | "pending" | "completed"
     };
@@ -1073,18 +1076,36 @@ export default function Agenda() {
 
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-muted-foreground" />
-                <div>
+                      <div className="flex-1">
                         <p className="text-sm font-medium text-foreground">
                           {appointment.patient}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {appointment.type}
                         </p>
-                </div>
+                      </div>
+                    </div>
+                    
+                    {/* Botão Ver Resumo - apenas se o paciente tiver resumo */}
+                    {appointment.patientId && (() => {
+                      const patient = patients.find(p => p.id === appointment.patientId);
+                      return patient?.resumo ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            setResumoPatient(patient);
+                          }}
+                          className="w-full gap-2 text-xs mt-2"
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          Ver resumo da conversa
+                        </Button>
+                      ) : null;
+                    })()}
+                  </div>
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
             )}
           </div>
         </DialogContent>
@@ -1418,6 +1439,76 @@ export default function Agenda() {
             </Button>
             <Button onClick={saveWorkSchedules} disabled={isLoadingSchedules}>
               Salvar Horários
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Resumo da Conversa */}
+      <Dialog open={resumoPatient !== null} onOpenChange={() => setResumoPatient(null)}>
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-accent" />
+              Resumo da Conversa
+            </DialogTitle>
+            <DialogDescription>
+              {resumoPatient?.name && `Resumo da conversa com ${resumoPatient.name}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {resumoPatient && (
+            <div className="space-y-4">
+              {/* Informações do Paciente */}
+              <div className="flex items-center gap-3 p-4 rounded-lg bg-accent/5 border border-accent/20">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 font-display text-base font-semibold text-accent">
+                  {resumoPatient.name
+                    ? resumoPatient.name.split(" ")
+                        .map((n: string) => n[0])
+                        .join("")
+                        .toUpperCase()
+                    : "?"
+                  }
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">{resumoPatient.name || "Paciente"}</h3>
+                  <p className="text-sm text-muted-foreground">{formatPhoneNumber(resumoPatient.phone)}</p>
+                </div>
+              </div>
+
+              {/* Resumo */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                  <MessageSquare className="h-4 w-4 text-accent" />
+                  <h3 className="text-sm font-semibold text-foreground">Resumo Gerado</h3>
+                </div>
+                
+                <div className="prose prose-sm max-w-none">
+                  <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                    {resumoPatient.resumo}
+                  </p>
+                </div>
+              </div>
+
+              {/* Metadados */}
+              <div className="flex items-center gap-4 pt-3 border-t border-border/50 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <FileText className="h-3 w-3" />
+                  <span>Gerado automaticamente</span>
+                </div>
+                {resumoPatient.last_visit && (
+                  <div className="flex items-center gap-1">
+                    <span>•</span>
+                    <span>Última atualização: {new Date(resumoPatient.last_visit).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResumoPatient(null)}>
+              Fechar
             </Button>
           </DialogFooter>
         </DialogContent>
