@@ -113,7 +113,7 @@ export interface Database {
           status: 'active' | 'inactive'
           last_visit: string | null
           total_visits: number
-          kanban_status: 'novo_contato' | 'qualificado' | 'em_atendimento' | 'agendado' | 'aguardando_confirmacao' | 'concluido' | 'consulta_cancelado'
+          kanban_status: 'novo_contato' | 'qualificado' | 'em_atendimento' | 'agendado' | 'aguardando_confirmacao' | 'concluido'
           observations: string | null
           resumo: string | null
         }
@@ -366,7 +366,6 @@ export interface Database {
           sabado_fim_trabalho: string | null
           sabado_inicio_almoco: string | null
           sabado_fim_almoco: string | null
-          consultation_duration: number
           created_at: string
           updated_at: string
         }
@@ -416,7 +415,6 @@ export interface Database {
           sabado_fim_trabalho?: string | null
           sabado_inicio_almoco?: string | null
           sabado_fim_almoco?: string | null
-          consultation_duration?: number
           created_at?: string
           updated_at?: string
         }
@@ -466,7 +464,6 @@ export interface Database {
           sabado_fim_trabalho?: string | null
           sabado_inicio_almoco?: string | null
           sabado_fim_almoco?: string | null
-          consultation_duration?: number
           created_at?: string
           updated_at?: string
         }

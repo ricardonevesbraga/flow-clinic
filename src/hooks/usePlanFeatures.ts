@@ -1,6 +1,7 @@
 import { useAuth } from "./useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { useCallback } from "react";
 
 export interface PlanLimits {
   max_agendamentos_mes: number | null;
@@ -70,8 +71,8 @@ export function usePlanFeatures() {
     return features[feature];
   };
 
-  // Função para verificar se atingiu um limite
-  const checkLimit = async (limitType: keyof PlanLimits): Promise<{ allowed: boolean; current: number; max: number | null }> => {
+  // Função para verificar se atingiu um limite (memoizada para evitar loops infinitos)
+  const checkLimit = useCallback(async (limitType: keyof PlanLimits): Promise<{ allowed: boolean; current: number; max: number | null }> => {
     const maxValue = limits[limitType];
     
     // Se não tem limite, permite
@@ -126,7 +127,7 @@ export function usePlanFeatures() {
       console.error('Erro ao verificar limite:', error);
       return { allowed: false, current, max: maxValue };
     }
-  };
+  }, [limits, organization?.id]);
 
   return {
     features,

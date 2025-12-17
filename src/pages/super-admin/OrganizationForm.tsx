@@ -38,6 +38,7 @@ import {
 
 interface OrganizationFormData {
   name: string;
+  contact_email: string;
   adminEmail: string;
   adminPassword: string;
   adminFullName: string;
@@ -364,6 +365,7 @@ export default function OrganizationForm() {
     if (organization) {
       reset({
         name: organization.name,
+        contact_email: organization.contact_email || "",
         is_active: organization.is_active,
         subscription_plan: organization.subscription_plan,
         adminEmail: "",
@@ -380,17 +382,6 @@ export default function OrganizationForm() {
       console.log("🔍 Iniciando saveMutation...");
       console.log("🔍 isEditing:", isEditing);
       
-      // Tentar refresh da sessão primeiro
-      console.log("🔄 Tentando refresh da sessão...");
-      const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
-      
-      if (refreshError) {
-        console.warn("⚠️ Erro ao fazer refresh:", refreshError);
-      } else {
-        console.log("✅ Sessão refreshed com sucesso");
-      }
-      
-      // Pegar sessão atual (já refreshed ou a existente)
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       console.log("🔍 Session completa:", JSON.stringify(session, null, 2));
@@ -402,11 +393,7 @@ export default function OrganizationForm() {
       
       if (sessionError || !session || !session.access_token) {
         console.error("❌ Erro ao obter sessão:", sessionError);
-        toast.error("Sessão expirada. Redirecionando para login...");
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 1500);
-        throw new Error("Sessão expirada. Por favor, faça login novamente.");
+        throw new Error("Sessão expirada. Por favor, faça logout e login novamente.");
       }
 
       let logoUrl = currentLogoUrl;
@@ -432,6 +419,7 @@ export default function OrganizationForm() {
           .from('organizations')
           .update({
             name: data.name,
+            contact_email: data.contact_email || null,
             is_active: data.is_active,
             logo_url: logoUrl,
             subscription_plan: data.subscription_plan,
@@ -661,6 +649,22 @@ export default function OrganizationForm() {
               {errors.name && (
                 <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>
               )}
+            </div>
+
+            <div>
+              <Label htmlFor="contact_email" className="text-purple-200">
+                E-mail de Contato
+              </Label>
+              <Input
+                id="contact_email"
+                type="email"
+                {...register("contact_email")}
+                placeholder="contato@clinica.com"
+                className="mt-1.5 bg-slate-800/40 border-purple-800/30 text-purple-100 placeholder:text-purple-400/50"
+              />
+              <p className="text-xs text-purple-400 mt-1">
+                E-mail usado para envio de confirmações de agendamento
+              </p>
             </div>
 
             {/* Plano de Assinatura */}

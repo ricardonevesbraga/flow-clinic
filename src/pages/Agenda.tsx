@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, ChevronLeft, ChevronRight, Clock, User, Plus, RefreshCw, Settings, MessageSquare, FileText } from "lucide-react";
-import { formatPhoneNumber } from "@/lib/utils";
+import { Calendar, ChevronLeft, ChevronRight, Clock, User, Plus, RefreshCw, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useOrganization } from "@/hooks/useOrganization";
 import {
@@ -73,8 +72,6 @@ export default function Agenda() {
   const [isWorkScheduleModalOpen, setIsWorkScheduleModalOpen] = useState(false);
   const [workSchedule, setWorkSchedule] = useState<WorkSchedule | null>(null);
   const [isLoadingSchedules, setIsLoadingSchedules] = useState(true);
-  const [consultationDuration, setConsultationDuration] = useState<number>(30);
-  const [resumoPatient, setResumoPatient] = useState<any | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -131,12 +128,6 @@ export default function Agenda() {
 
       if (data) {
         // ✅ TEM DADOS NO BANCO: Converter estrutura do banco para UI
-        
-        // Carregar duração da consulta
-        if (data.consultation_duration) {
-          setConsultationDuration(data.consultation_duration);
-        }
-        
         const schedule: WorkSchedule = {
           id: data.id,
           domingo: {
@@ -281,8 +272,6 @@ export default function Agenda() {
         sabado_fim_trabalho: workSchedule.sabado.is_active ? workSchedule.sabado.fim_trabalho : null,
         sabado_inicio_almoco: workSchedule.sabado.is_active ? workSchedule.sabado.inicio_almoco : null,
         sabado_fim_almoco: workSchedule.sabado.is_active ? workSchedule.sabado.fim_almoco : null,
-        // Incluir duração da consulta
-        consultation_duration: consultationDuration,
       };
 
       console.log('💾 Salvando no banco:', dataToSave);
@@ -459,7 +448,6 @@ export default function Agenda() {
     // Usar start_datetime se disponível, senão usar date+time (compatibilidade)
     let date: Date;
     let time: string;
-    let endTime: string | null = null;
     
     if (apt.start_datetime) {
       // Extrair data/hora LITERAL do banco, sem conversão de timezone
@@ -483,27 +471,11 @@ export default function Agenda() {
       time = apt.time;
     }
     
-    // Extrair hora de fim se disponível
-    if (apt.end_datetime) {
-      const endMatch = apt.end_datetime.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-      if (endMatch) {
-        const [, , , , hours, minutes] = endMatch;  // year, month, day, hours, minutes
-        endTime = `${hours}:${minutes}`;
-      } else {
-        const endDate = new Date(apt.end_datetime);
-        const hours = String(endDate.getHours()).padStart(2, '0');
-        const minutes = String(endDate.getMinutes()).padStart(2, '0');
-        endTime = `${hours}:${minutes}`;
-      }
-    }
-    
     return {
       id: apt.id,
       date: date,
       time: time,
-      endTime: endTime,
       patient: apt.patient_name,
-      patientId: apt.patient_id,
       type: apt.type,
       status: apt.status as "confirmed" | "pending" | "completed"
     };
@@ -1058,7 +1030,7 @@ export default function Agenda() {
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-accent" />
                       <span className="text-sm font-semibold text-foreground">
-                        {appointment.endTime ? `${appointment.time} - ${appointment.endTime}` : appointment.time}
+                        {appointment.time}
                       </span>
                       <div
                         className={cn(
@@ -1076,36 +1048,18 @@ export default function Agenda() {
 
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-muted-foreground" />
-                      <div className="flex-1">
+                <div>
                         <p className="text-sm font-medium text-foreground">
                           {appointment.patient}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {appointment.type}
                         </p>
-                      </div>
-                    </div>
-                    
-                    {/* Botão Ver Resumo - apenas se o paciente tiver resumo */}
-                    {appointment.patientId && (() => {
-                      const patient = patients.find(p => p.id === appointment.patientId);
-                      return patient?.resumo ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={async () => {
-                            setResumoPatient(patient);
-                          }}
-                          className="w-full gap-2 text-xs mt-2"
-                        >
-                          <MessageSquare className="h-3.5 w-3.5" />
-                          Ver resumo da conversa
-                        </Button>
-                      ) : null;
-                    })()}
-                  </div>
-                ))}
+                </div>
               </div>
+            </div>
+          ))}
+        </div>
             )}
           </div>
         </DialogContent>
@@ -1118,13 +1072,6 @@ export default function Agenda() {
             <DialogTitle className="font-display text-lg md:text-xl">
               Novo Compromisso
             </DialogTitle>
-            <DialogDescription>
-              {consultationDuration && (
-                <span className="text-accent">
-                  ⏱️ Duração padrão: {consultationDuration} minutos
-                </span>
-              )}
-            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
@@ -1150,26 +1097,7 @@ export default function Agenda() {
                   id="start_time"
                   type="time"
                   value={formData.start_time}
-                  onChange={(e) => {
-                    const newStartTime = e.target.value;
-                    setFormData(prev => {
-                      // Calcular automaticamente o horário de fim baseado na duração da consulta
-                      let newEndTime = prev.end_time;
-                      if (newStartTime && consultationDuration) {
-                        const [hours, minutes] = newStartTime.split(':').map(Number);
-                        const startDate = new Date();
-                        startDate.setHours(hours, minutes, 0);
-                        startDate.setMinutes(startDate.getMinutes() + consultationDuration);
-                        newEndTime = startDate.toTimeString().slice(0, 5);
-                      }
-                      return { 
-                        ...prev, 
-                        start_time: newStartTime,
-                        end_time: newEndTime,
-                        end_date: prev.start_date // Manter mesma data
-                      };
-                    });
-                  }}
+                  onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
                   className="w-full"
                 />
               </div>
@@ -1297,42 +1225,7 @@ export default function Agenda() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
               </div>
             ) : workSchedule ? (
-              <>
-                {/* Configuração de Duração da Consulta */}
-                <div className="card-luxury p-4 space-y-3 bg-accent/5 border-accent/20">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-accent" />
-                    <h3 className="font-semibold text-base">Tempo de Consulta</h3>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="consultation-duration" className="text-sm">
-                      Duração padrão de cada consulta (minutos)
-                    </Label>
-                    <Select
-                      value={consultationDuration.toString()}
-                      onValueChange={(value) => setConsultationDuration(Number(value))}
-                    >
-                      <SelectTrigger id="consultation-duration">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="15">15 minutos</SelectItem>
-                        <SelectItem value="20">20 minutos</SelectItem>
-                        <SelectItem value="30">30 minutos</SelectItem>
-                        <SelectItem value="45">45 minutos</SelectItem>
-                        <SelectItem value="60">1 hora</SelectItem>
-                        <SelectItem value="90">1 hora e 30 minutos</SelectItem>
-                        <SelectItem value="120">2 horas</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Este tempo será usado como padrão ao criar novos agendamentos
-                    </p>
-                  </div>
-                </div>
-
-                {/* Lista de Dias da Semana */}
-                {diasDaSemana.map((dia) => {
+              diasDaSemana.map((dia) => {
                 const daySchedule = workSchedule[dia.key];
 
                 return (
@@ -1424,8 +1317,7 @@ export default function Agenda() {
                     )}
                   </div>
                 );
-              })}
-              </>
+              })
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 Erro ao carregar horários
@@ -1439,76 +1331,6 @@ export default function Agenda() {
             </Button>
             <Button onClick={saveWorkSchedules} disabled={isLoadingSchedules}>
               Salvar Horários
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de Resumo da Conversa */}
-      <Dialog open={resumoPatient !== null} onOpenChange={() => setResumoPatient(null)}>
-        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-accent" />
-              Resumo da Conversa
-            </DialogTitle>
-            <DialogDescription>
-              {resumoPatient?.name && `Resumo da conversa com ${resumoPatient.name}`}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {resumoPatient && (
-            <div className="space-y-4">
-              {/* Informações do Paciente */}
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-accent/5 border border-accent/20">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 font-display text-base font-semibold text-accent">
-                  {resumoPatient.name
-                    ? resumoPatient.name.split(" ")
-                        .map((n: string) => n[0])
-                        .join("")
-                        .toUpperCase()
-                    : "?"
-                  }
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">{resumoPatient.name || "Paciente"}</h3>
-                  <p className="text-sm text-muted-foreground">{formatPhoneNumber(resumoPatient.phone)}</p>
-                </div>
-              </div>
-
-              {/* Resumo */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 pb-2 border-b border-border/50">
-                  <MessageSquare className="h-4 w-4 text-accent" />
-                  <h3 className="text-sm font-semibold text-foreground">Resumo Gerado</h3>
-                </div>
-                
-                <div className="prose prose-sm max-w-none">
-                  <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                    {resumoPatient.resumo}
-                  </p>
-                </div>
-              </div>
-
-              {/* Metadados */}
-              <div className="flex items-center gap-4 pt-3 border-t border-border/50 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <FileText className="h-3 w-3" />
-                  <span>Gerado automaticamente</span>
-                </div>
-                {resumoPatient.last_visit && (
-                  <div className="flex items-center gap-1">
-                    <span>•</span>
-                    <span>Última atualização: {new Date(resumoPatient.last_visit).toLocaleDateString('pt-BR')}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setResumoPatient(null)}>
-              Fechar
             </Button>
           </DialogFooter>
         </DialogContent>

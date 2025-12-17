@@ -44,7 +44,6 @@ type KanbanStatus =
   | "agendado"
   | "aguardando_confirmacao"
   | "concluido"
-  | "consulta_cancelado"
   | "all";
 
 const kanbanStatuses = [
@@ -54,7 +53,6 @@ const kanbanStatuses = [
   { id: "agendado", title: "Agendado", color: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20" },
   { id: "aguardando_confirmacao", title: "Aguardando Confirmação", color: "bg-orange-500/10 text-orange-600 border-orange-500/20" },
   { id: "concluido", title: "Concluído", color: "bg-green-500/10 text-green-600 border-green-500/20" },
-  { id: "consulta_cancelado", title: "Consulta Cancelado", color: "bg-red-500/10 text-red-600 border-red-500/20" },
 ];
 
 export default function CRM() {

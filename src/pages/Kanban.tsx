@@ -50,8 +50,7 @@ type KanbanStatus =
   | "em_atendimento"
   | "agendado"
   | "aguardando_confirmacao"
-  | "concluido"
-  | "consulta_cancelado";
+  | "concluido";
 
 interface KanbanCard {
   id: string;
@@ -77,7 +76,6 @@ const columns: Column[] = [
   { id: "agendado", title: "Agendado", color: "bg-cyan-500" },
   { id: "aguardando_confirmacao", title: "Aguardando Confirmação", color: "bg-orange-500" },
   { id: "concluido", title: "Concluído", color: "bg-green-500" },
-  { id: "consulta_cancelado", title: "Consulta Cancelado", color: "bg-red-500" },
 ];
 
 // Card arrastável
