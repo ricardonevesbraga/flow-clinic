@@ -264,6 +264,19 @@ export default function OrganizationForm() {
         .select("*")
         .eq("organization_id", id);
 
+      // Mapear plano para número
+      // plano_a = 1 (atendimento)
+      // plano_b = 2 (atendimento + conhecimento)
+      // plano_c = 3 (completo)
+      // plano_d = 4 (enterprise)
+      const planNumberMap: Record<string, number> = {
+        'plano_a': 1,
+        'plano_b': 2,
+        'plano_c': 3,
+        'plano_d': 4,
+      };
+      const planNumber = planNumberMap[orgData?.subscription_plan] || 1;
+
       // Montar payload com TODAS as informações
       const payload = {
         organization: orgData,
@@ -271,6 +284,7 @@ export default function OrganizationForm() {
         whatsapp_instance: whatsappData || null,
         settings: settingsData || null,
         profiles: profilesData || [],
+        plan_number: planNumber,
         timestamp: new Date().toISOString(),
       };
 

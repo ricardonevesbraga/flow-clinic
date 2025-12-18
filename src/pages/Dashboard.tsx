@@ -1,9 +1,11 @@
-import { Calendar, Users, Clock, TrendingUp, Activity, CheckCircle2 } from "lucide-react";
+import { Calendar, Users, Clock, TrendingUp, Activity, CheckCircle2, MessageSquare, MessagesSquare, UserCheck } from "lucide-react";
 import KPICard from "@/components/KPICard";
 import { Card } from "@/components/ui/card";
 import { useAppointments, useCreateAppointment } from "@/hooks/useAppointments";
 import { usePatients, useCreatePatient } from "@/hooks/usePatients";
-import { formatTime, isToday, isSameDay } from "@/lib/dateUtils";
+import { useChatMetrics } from "@/hooks/useChatMetrics";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
+import { formatTime, isToday } from "@/lib/dateUtils";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import {
@@ -49,9 +51,15 @@ interface PatientFormData {
 export default function Dashboard() {
   const { data: allAppointments = [], isLoading: loadingAppointments } = useAppointments();
   const { data: patients = [], isLoading: loadingPatients } = usePatients();
+  const { data: chatMetrics, isLoading: loadingChats } = useChatMetrics();
+  const { features } = usePlanFeatures();
   const { profile } = useAuth();
   const createAppointment = useCreateAppointment();
   const createPatient = useCreatePatient();
+
+  // Verificar recursos do plano
+  const hasAgendamento = features.agendamento_automatico;
+  const hasBaseConhecimento = features.base_conhecimento;
 
   // Modals state
   const [isTodayModalOpen, setIsTodayModalOpen] = useState(false);
@@ -75,11 +83,9 @@ export default function Dashboard() {
   // Filtrar compromissos de hoje usando start_datetime
   const today = new Date();
   const todayAppointments = allAppointments.filter(apt => {
-    // Tentar start_datetime primeiro, fallback para date
     if (apt.start_datetime) {
       return isToday(apt.start_datetime);
     }
-    // Fallback para compatibilidade com dados antigos
     return apt.date === today.toISOString().split('T')[0];
   });
 
@@ -144,7 +150,7 @@ export default function Dashboard() {
     }
   };
 
-  const isLoading = loadingAppointments || loadingPatients;
+  const isLoading = loadingAppointments || loadingPatients || loadingChats;
 
   if (isLoading) {
     return (
@@ -165,160 +171,308 @@ export default function Dashboard() {
           Bem-vindo, {profile?.full_name || 'Usuário'}
         </h1>
         <p className="text-base md:text-lg text-muted-foreground">
-          Seu dia está organizado. Aqui está sua visão geral.
+          {hasAgendamento 
+            ? 'Seu dia está organizado. Aqui está sua visão geral.'
+            : 'Acompanhe suas métricas de atendimento em tempo real.'}
         </p>
       </div>
 
-      {/* KPI Grid */}
+      {/* KPI Grid - Adaptado ao plano */}
       <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Métricas de Atendimento (sempre visível) */}
         <KPICard
-          title="Compromissos Hoje"
-          value={todayAppointments.length}
-          change={`${confirmedToday} confirmados`}
+          title="Conversas Hoje"
+          value={chatMetrics?.conversationsToday || 0}
+          change={`${chatMetrics?.messagesToday || 0} mensagens`}
           changeType="positive"
-          icon={Calendar}
-          description="Agenda do dia"
+          icon={MessageSquare}
+          description="Atendimentos do dia"
         />
+        <KPICard
+          title="Total de Conversas"
+          value={chatMetrics?.totalConversations || 0}
+          change={`${chatMetrics?.conversationsThisMonth || 0} este mês`}
+          changeType="positive"
+          icon={MessagesSquare}
+          description="Conversas únicas"
+        />
+        <KPICard
+          title="Mensagens do Mês"
+          value={chatMetrics?.messagesThisMonth || 0}
+          change={`${chatMetrics?.messagesThisWeek || 0} esta semana`}
+          changeType="positive"
+          icon={Activity}
+          description="Volume de mensagens"
+        />
+
+        {/* Métricas de Agenda (só para planos com agendamento) */}
+        {hasAgendamento && (
+          <>
+            <KPICard
+              title="Compromissos Hoje"
+              value={todayAppointments.length}
+              change={`${confirmedToday} confirmados`}
+              changeType="positive"
+              icon={Calendar}
+              description="Agenda do dia"
+            />
+            <KPICard
+              title="Taxa de Confirmação"
+              value={todayAppointments.length > 0 ? `${Math.round((confirmedToday / todayAppointments.length) * 100)}%` : "0%"}
+              change="Hoje"
+              changeType="positive"
+              icon={CheckCircle2}
+              description="Compromissos confirmados"
+            />
+            <KPICard
+              title="Próximos 7 Dias"
+              value={allAppointments.filter(apt => {
+                const aptDate = apt.start_datetime ? new Date(apt.start_datetime) : new Date(apt.date);
+                const nextWeek = new Date(today);
+                nextWeek.setDate(today.getDate() + 7);
+                return aptDate >= today && aptDate <= nextWeek;
+              }).length}
+              change="Agendados"
+              changeType="neutral"
+              icon={TrendingUp}
+              description="Próxima semana"
+            />
+          </>
+        )}
+
+        {/* Métricas de Pacientes (sempre visível) */}
         <KPICard
           title="Pacientes Totais"
           value={patients.length}
           change={`${activePatients} ativos`}
           changeType="positive"
           icon={Users}
-          description="Base de pacientes"
+          description="Base de contatos"
         />
         <KPICard
-          title="Total de Visitas"
-          value={totalVisits}
-          change="Histórico completo"
+          title="Conversas na Semana"
+          value={chatMetrics?.conversationsThisWeek || 0}
+          change={`${chatMetrics?.messagesThisWeek || 0} mensagens`}
           changeType="neutral"
-          icon={Clock}
-          description="Atendimentos realizados"
-        />
-        <KPICard
-          title="Taxa de Confirmação"
-          value={todayAppointments.length > 0 ? `${Math.round((confirmedToday / todayAppointments.length) * 100)}%` : "0%"}
-          change="Hoje"
-          changeType="positive"
-          icon={CheckCircle2}
-          description="Compromissos confirmados"
-        />
-        <KPICard
-          title="Próximos 7 Dias"
-          value={allAppointments.filter(apt => {
-            const aptDate = apt.start_datetime ? new Date(apt.start_datetime) : new Date(apt.date);
-            const nextWeek = new Date(today);
-            nextWeek.setDate(today.getDate() + 7);
-            return aptDate >= today && aptDate <= nextWeek;
-          }).length}
-          change="Agendados"
-          changeType="neutral"
-          icon={TrendingUp}
-          description="Próxima semana"
-        />
-        <KPICard
-          title="Status Geral"
-          value="Ótimo"
-          change="Sistema operacional"
-          changeType="positive"
-          icon={Activity}
-          description="Tudo funcionando"
+          icon={UserCheck}
+          description="Últimos 7 dias"
         />
       </div>
 
-      {/* Today's Schedule */}
-      <Card className="card-luxury p-4 md:p-6 lg:p-8 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-        <div className="mb-4 md:mb-6">
-          <h2 className="font-display text-xl md:text-2xl font-semibold text-foreground mb-2">
-            Agenda de Hoje
-          </h2>
-          <p className="text-sm md:text-base text-muted-foreground">
-            {new Date().toLocaleDateString("pt-BR", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-        </div>
-
-        {todayAppointments.length === 0 ? (
-          <div className="text-center py-12">
-            <Calendar className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-            <p className="text-lg font-medium text-foreground mb-2">Nenhum compromisso hoje</p>
-            <p className="text-sm text-muted-foreground">Aproveite para descansar ou planejar sua semana</p>
-          </div>
-        ) : (
-          <div className="space-y-3 md:space-y-4">
-            {todayAppointments
-              .sort((a, b) => {
-                // Ordenar por start_datetime ou fallback para time
-                const timeA = a.start_datetime ? new Date(a.start_datetime).getTime() : a.time;
-                const timeB = b.start_datetime ? new Date(b.start_datetime).getTime() : b.time;
-                return timeA > timeB ? 1 : -1;
-              })
-              .map((appointment, index) => {
-                // Usar start_datetime se disponível, senão usar time (compatibilidade)
-                const displayTime = appointment.start_datetime 
-                  ? formatTime(appointment.start_datetime)
-                  : appointment.time;
-                const [hours, minutes] = displayTime.split(":");
-                
-                return (
-                  <div
-                    key={appointment.id}
-                    className="flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4 rounded-lg border border-border/50 bg-background p-3 md:p-4 transition-all duration-300 hover:border-accent/50 hover:shadow-lg"
-                    style={{ animationDelay: `${0.1 * index}s` }}
-                  >
-                    <div className="flex h-14 w-14 md:h-16 md:w-16 shrink-0 flex-col items-center justify-center rounded-lg bg-accent/10">
-                      <span className="text-xs font-medium text-accent">{hours}</span>
-                      <span className="text-xl md:text-2xl font-bold text-accent">{minutes}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-foreground truncate">{appointment.patient_name}</h4>
-                      <p className="text-sm text-muted-foreground">{appointment.type}</p>
-                    </div>
-                    <div
-                      className={`self-start sm:self-center rounded-full px-3 md:px-4 py-1 md:py-1.5 text-xs font-medium whitespace-nowrap ${
-                        appointment.status === "confirmed"
-                          ? "bg-success/10 text-success"
-                          : appointment.status === "pending"
-                          ? "bg-accent/10 text-accent"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {appointment.status === "confirmed" ? "Confirmado" : appointment.status === "pending" ? "Pendente" : "Concluído"}
-                    </div>
-                  </div>
-                );
+      {/* Área Principal - Adaptada ao plano */}
+      {hasAgendamento ? (
+        /* Agenda de Hoje (para planos com agendamento) */
+        <Card className="card-luxury p-4 md:p-6 lg:p-8 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
+          <div className="mb-4 md:mb-6">
+            <h2 className="font-display text-xl md:text-2xl font-semibold text-foreground mb-2">
+              Agenda de Hoje
+            </h2>
+            <p className="text-sm md:text-base text-muted-foreground">
+              {new Date().toLocaleDateString("pt-BR", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
               })}
+            </p>
           </div>
-        )}
-      </Card>
 
-      {/* Quick Actions */}
+          {todayAppointments.length === 0 ? (
+            <div className="text-center py-12">
+              <Calendar className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+              <p className="text-lg font-medium text-foreground mb-2">Nenhum compromisso hoje</p>
+              <p className="text-sm text-muted-foreground">Aproveite para descansar ou planejar sua semana</p>
+            </div>
+          ) : (
+            <div className="space-y-3 md:space-y-4">
+              {todayAppointments
+                .sort((a, b) => {
+                  const timeA = a.start_datetime ? new Date(a.start_datetime).getTime() : a.time;
+                  const timeB = b.start_datetime ? new Date(b.start_datetime).getTime() : b.time;
+                  return timeA > timeB ? 1 : -1;
+                })
+                .map((appointment, index) => {
+                  const displayTime = appointment.start_datetime 
+                    ? formatTime(appointment.start_datetime)
+                    : appointment.time;
+                  const [hours, minutes] = displayTime.split(":");
+                  
+                  return (
+                    <div
+                      key={appointment.id}
+                      className="flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4 rounded-lg border border-border/50 bg-background p-3 md:p-4 transition-all duration-300 hover:border-accent/50 hover:shadow-lg"
+                      style={{ animationDelay: `${0.1 * index}s` }}
+                    >
+                      <div className="flex h-14 w-14 md:h-16 md:w-16 shrink-0 flex-col items-center justify-center rounded-lg bg-accent/10">
+                        <span className="text-xs font-medium text-accent">{hours}</span>
+                        <span className="text-xl md:text-2xl font-bold text-accent">{minutes}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-foreground truncate">{appointment.patient_name}</h4>
+                        <p className="text-sm text-muted-foreground">{appointment.type}</p>
+                      </div>
+                      <div
+                        className={`self-start sm:self-center rounded-full px-3 md:px-4 py-1 md:py-1.5 text-xs font-medium whitespace-nowrap ${
+                          appointment.status === "confirmed"
+                            ? "bg-success/10 text-success"
+                            : appointment.status === "pending"
+                            ? "bg-accent/10 text-accent"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {appointment.status === "confirmed" ? "Confirmado" : appointment.status === "pending" ? "Pendente" : "Concluído"}
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </Card>
+      ) : (
+        /* Resumo de Atendimentos (para planos sem agendamento) */
+        <Card className="card-luxury p-4 md:p-6 lg:p-8 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
+          <div className="mb-4 md:mb-6">
+            <h2 className="font-display text-xl md:text-2xl font-semibold text-foreground mb-2">
+              Resumo de Atendimentos
+            </h2>
+            <p className="text-sm md:text-base text-muted-foreground">
+              Visão geral das conversas do seu atendimento automatizado
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-3">
+            {/* Hoje */}
+            <div className="rounded-lg border border-border/50 bg-background p-4 md:p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
+                  <MessageSquare className="h-5 w-5 text-green-500" />
+                </div>
+                <h3 className="font-semibold text-foreground">Hoje</h3>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Conversas</span>
+                  <span className="font-semibold text-foreground">{chatMetrics?.conversationsToday || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Mensagens</span>
+                  <span className="font-semibold text-foreground">{chatMetrics?.messagesToday || 0}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Esta Semana */}
+            <div className="rounded-lg border border-border/50 bg-background p-4 md:p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+                  <TrendingUp className="h-5 w-5 text-blue-500" />
+                </div>
+                <h3 className="font-semibold text-foreground">Esta Semana</h3>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Conversas</span>
+                  <span className="font-semibold text-foreground">{chatMetrics?.conversationsThisWeek || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Mensagens</span>
+                  <span className="font-semibold text-foreground">{chatMetrics?.messagesThisWeek || 0}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Este Mês */}
+            <div className="rounded-lg border border-border/50 bg-background p-4 md:p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
+                  <Activity className="h-5 w-5 text-purple-500" />
+                </div>
+                <h3 className="font-semibold text-foreground">Este Mês</h3>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Conversas</span>
+                  <span className="font-semibold text-foreground">{chatMetrics?.conversationsThisMonth || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Mensagens</span>
+                  <span className="font-semibold text-foreground">{chatMetrics?.messagesThisMonth || 0}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Totais */}
+          <div className="mt-6 pt-6 border-t border-border/50">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Geral</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {chatMetrics?.totalConversations || 0} conversas
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">Total de Mensagens</p>
+                <p className="text-2xl font-bold text-accent">
+                  {chatMetrics?.totalMessages || 0}
+                </p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Quick Actions - Adaptadas ao plano */}
       <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
-        <button 
-          onClick={() => setIsTodayModalOpen(true)}
-          className="card-luxury group p-5 md:p-6 text-left transition-all hover-glow"
-        >
-          <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
-            <Clock className="h-5 w-5 md:h-6 md:w-6 text-accent" />
-          </div>
-          <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Hoje</h3>
-          <p className="text-sm text-muted-foreground">Ver compromissos de hoje</p>
-        </button>
+        {hasAgendamento ? (
+          <>
+            <button 
+              onClick={() => setIsTodayModalOpen(true)}
+              className="card-luxury group p-5 md:p-6 text-left transition-all hover-glow"
+            >
+              <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                <Clock className="h-5 w-5 md:h-6 md:w-6 text-accent" />
+              </div>
+              <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Hoje</h3>
+              <p className="text-sm text-muted-foreground">Ver compromissos de hoje</p>
+            </button>
 
-        <button 
-          onClick={() => setIsAppointmentModalOpen(true)}
-          className="card-luxury group p-5 md:p-6 text-left transition-all hover-glow"
-        >
-          <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
-            <Calendar className="h-5 w-5 md:h-6 md:w-6 text-accent" />
-          </div>
-          <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Novo Compromisso</h3>
-          <p className="text-sm text-muted-foreground">Agende um novo atendimento</p>
-        </button>
+            <button 
+              onClick={() => setIsAppointmentModalOpen(true)}
+              className="card-luxury group p-5 md:p-6 text-left transition-all hover-glow"
+            >
+              <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                <Calendar className="h-5 w-5 md:h-6 md:w-6 text-accent" />
+              </div>
+              <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Novo Compromisso</h3>
+              <p className="text-sm text-muted-foreground">Agende um novo atendimento</p>
+            </button>
+          </>
+        ) : (
+          <>
+            <button 
+              onClick={() => setIsReportsModalOpen(true)}
+              className="card-luxury group p-5 md:p-6 text-left transition-all hover-glow"
+            >
+              <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                <MessageSquare className="h-5 w-5 md:h-6 md:w-6 text-accent" />
+              </div>
+              <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Atendimentos</h3>
+              <p className="text-sm text-muted-foreground">Ver métricas detalhadas</p>
+            </button>
+
+            <button 
+              onClick={() => window.location.href = '/app/agent-ia'}
+              className="card-luxury group p-5 md:p-6 text-left transition-all hover-glow"
+            >
+              <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                <Activity className="h-5 w-5 md:h-6 md:w-6 text-accent" />
+              </div>
+              <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Configurar Agent</h3>
+              <p className="text-sm text-muted-foreground">Ajuste seu atendimento IA</p>
+            </button>
+          </>
+        )}
 
         <button 
           onClick={() => setIsPatientModalOpen(true)}
@@ -327,8 +481,8 @@ export default function Dashboard() {
           <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
             <Users className="h-5 w-5 md:h-6 md:w-6 text-accent" />
           </div>
-          <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Adicionar Paciente</h3>
-          <p className="text-sm text-muted-foreground">Cadastre um novo paciente</p>
+          <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Adicionar Contato</h3>
+          <p className="text-sm text-muted-foreground">Cadastre um novo contato</p>
         </button>
 
         <button 
@@ -336,7 +490,7 @@ export default function Dashboard() {
           className="card-luxury group p-5 md:p-6 text-left transition-all hover-glow"
         >
           <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
-            <Activity className="h-5 w-5 md:h-6 md:w-6 text-accent" />
+            <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-accent" />
           </div>
           <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Ver Relatórios</h3>
           <p className="text-sm text-muted-foreground">Analise suas métricas</p>
@@ -532,9 +686,9 @@ export default function Dashboard() {
       <Dialog open={isPatientModalOpen} onOpenChange={setIsPatientModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Novo Paciente</DialogTitle>
+            <DialogTitle>Novo Contato</DialogTitle>
             <DialogDescription>
-              Adicione um novo paciente ao seu sistema de gestão.
+              Adicione um novo contato ao seu sistema.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={patientForm.handleSubmit(onSubmitPatient)} className="space-y-4">
@@ -590,7 +744,7 @@ export default function Dashboard() {
               <Label htmlFor="observations">Observações</Label>
               <Textarea
                 id="observations"
-                placeholder="Anotações sobre o paciente..."
+                placeholder="Anotações sobre o contato..."
                 {...patientForm.register("observations")}
                 rows={3}
                 className="resize-none"
@@ -606,7 +760,7 @@ export default function Dashboard() {
                 Cancelar
               </Button>
               <Button type="submit" disabled={createPatient.isPending}>
-                {createPatient.isPending ? 'Criando...' : 'Adicionar Paciente'}
+                {createPatient.isPending ? 'Criando...' : 'Adicionar Contato'}
               </Button>
             </DialogFooter>
           </form>
@@ -615,79 +769,123 @@ export default function Dashboard() {
 
       {/* Modal: Ver Relatórios */}
       <Dialog open={isReportsModalOpen} onOpenChange={setIsReportsModalOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
             <DialogTitle>Relatórios e Estatísticas</DialogTitle>
             <DialogDescription>
-              Visão geral do seu consultório
+              Visão geral do seu {hasAgendamento ? 'consultório' : 'atendimento'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-lg border border-border/50 bg-background p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Users className="h-4 w-4 text-accent" />
-                  <h4 className="font-semibold text-sm">Total de Pacientes</h4>
+            {/* Métricas de Atendimento */}
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-3">Métricas de Atendimento</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="rounded-lg border border-border/50 bg-background p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MessageSquare className="h-4 w-4 text-accent" />
+                    <h4 className="font-semibold text-sm">Hoje</h4>
+                  </div>
+                  <p className="text-2xl font-bold text-foreground">{chatMetrics?.conversationsToday || 0}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {chatMetrics?.messagesToday || 0} mensagens
+                  </p>
                 </div>
-                <p className="text-2xl font-bold text-foreground">{patients.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {activePatients} ativos
-                </p>
-              </div>
 
-              <div className="rounded-lg border border-border/50 bg-background p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="h-4 w-4 text-accent" />
-                  <h4 className="font-semibold text-sm">Compromissos Hoje</h4>
+                <div className="rounded-lg border border-border/50 bg-background p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="h-4 w-4 text-accent" />
+                    <h4 className="font-semibold text-sm">Semana</h4>
+                  </div>
+                  <p className="text-2xl font-bold text-foreground">{chatMetrics?.conversationsThisWeek || 0}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {chatMetrics?.messagesThisWeek || 0} mensagens
+                  </p>
                 </div>
-                <p className="text-2xl font-bold text-foreground">{todayAppointments.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {confirmedToday} confirmados
-                </p>
-              </div>
 
-              <div className="rounded-lg border border-border/50 bg-background p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="h-4 w-4 text-accent" />
-                  <h4 className="font-semibold text-sm">Total de Visitas</h4>
+                <div className="rounded-lg border border-border/50 bg-background p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Activity className="h-4 w-4 text-accent" />
+                    <h4 className="font-semibold text-sm">Mês</h4>
+                  </div>
+                  <p className="text-2xl font-bold text-foreground">{chatMetrics?.conversationsThisMonth || 0}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {chatMetrics?.messagesThisMonth || 0} mensagens
+                  </p>
                 </div>
-                <p className="text-2xl font-bold text-foreground">{totalVisits}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Histórico completo
-                </p>
-              </div>
 
-              <div className="rounded-lg border border-border/50 bg-background p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle2 className="h-4 w-4 text-accent" />
-                  <h4 className="font-semibold text-sm">Taxa de Confirmação</h4>
+                <div className="rounded-lg border border-border/50 bg-background p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MessagesSquare className="h-4 w-4 text-accent" />
+                    <h4 className="font-semibold text-sm">Total</h4>
+                  </div>
+                  <p className="text-2xl font-bold text-foreground">{chatMetrics?.totalConversations || 0}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {chatMetrics?.totalMessages || 0} mensagens
+                  </p>
                 </div>
-                <p className="text-2xl font-bold text-foreground">
-                  {todayAppointments.length > 0 ? `${Math.round((confirmedToday / todayAppointments.length) * 100)}%` : "0%"}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Hoje
-                </p>
               </div>
             </div>
 
-            <div className="rounded-lg border border-border/50 bg-background p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-accent" />
-                <h4 className="font-semibold text-sm">Próximos 7 Dias</h4>
+            {/* Métricas de Pacientes */}
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-3">Base de Contatos</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-lg border border-border/50 bg-background p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="h-4 w-4 text-accent" />
+                    <h4 className="font-semibold text-sm">Total de Contatos</h4>
+                  </div>
+                  <p className="text-2xl font-bold text-foreground">{patients.length}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {activePatients} ativos
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-border/50 bg-background p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-4 w-4 text-accent" />
+                    <h4 className="font-semibold text-sm">Total de Visitas</h4>
+                  </div>
+                  <p className="text-2xl font-bold text-foreground">{totalVisits}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Histórico completo
+                  </p>
+                </div>
               </div>
-              <p className="text-2xl font-bold text-foreground">
-                {allAppointments.filter(apt => {
-                  const aptDate = apt.start_datetime ? new Date(apt.start_datetime) : new Date(apt.date);
-                  const nextWeek = new Date(today);
-                  nextWeek.setDate(today.getDate() + 7);
-                  return aptDate >= today && aptDate <= nextWeek;
-                }).length}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Agendamentos programados
-              </p>
             </div>
+
+            {/* Métricas de Agenda (se disponível) */}
+            {hasAgendamento && (
+              <div>
+                <h3 className="text-sm font-semibold text-foreground mb-3">Agenda</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-lg border border-border/50 bg-background p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Calendar className="h-4 w-4 text-accent" />
+                      <h4 className="font-semibold text-sm">Compromissos Hoje</h4>
+                    </div>
+                    <p className="text-2xl font-bold text-foreground">{todayAppointments.length}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {confirmedToday} confirmados
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-border/50 bg-background p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle2 className="h-4 w-4 text-accent" />
+                      <h4 className="font-semibold text-sm">Taxa de Confirmação</h4>
+                    </div>
+                    <p className="text-2xl font-bold text-foreground">
+                      {todayAppointments.length > 0 ? `${Math.round((confirmedToday / todayAppointments.length) * 100)}%` : "0%"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Hoje
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

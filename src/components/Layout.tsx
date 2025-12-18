@@ -1,6 +1,6 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -23,6 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/hooks/useAuth";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -40,30 +41,43 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import SupportButton from "@/components/SupportButton";
 
-const navigation = [
-  { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
-  { name: "Agenda", href: "/app/agenda", icon: Calendar },
+// Definição dos itens de navegação com suas features necessárias
+const allNavigationItems = [
+  { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard, requiredFeature: null },
+  { name: "Agenda", href: "/app/agenda", icon: Calendar, requiredFeature: 'agendamento_automatico' as const },
   { 
     name: "Clientes", 
     href: "/app/clientes", 
     icon: Users,
+    requiredFeature: null,
     subItems: [
       { name: "Contatos", href: "/app/clientes/crm", icon: Users },
       { name: "CRM", href: "/app/clientes/kanban", icon: KanbanIcon }
     ]
   },
-  { name: "Agent IA", href: "/app/agent-ia", icon: Bot },
-  { name: "Conhecimento do Agent", href: "/app/conhecimento", icon: BookOpen },
-  { name: "Integração", href: "/app/integrations", icon: Plug },
+  { name: "Agent IA", href: "/app/agent-ia", icon: Bot, requiredFeature: null },
+  { name: "Conhecimento do Agent", href: "/app/conhecimento", icon: BookOpen, requiredFeature: 'base_conhecimento' as const },
+  { name: "Integração", href: "/app/integrations", icon: Plug, requiredFeature: null },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { profile, organization, signOut } = useAuth();
+  const { features } = usePlanFeatures();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [selectedPlanForRequest, setSelectedPlanForRequest] = useState<string | null>(null);
+
+  // Filtrar navegação baseado nas features do plano
+  const navigation = useMemo(() => {
+    return allNavigationItems.filter(item => {
+      // Se não requer feature específica, sempre mostra
+      if (!item.requiredFeature) return true;
+      // Se requer feature, verifica se o plano tem
+      return features[item.requiredFeature];
+    });
+  }, [features]);
 
   // Listener para abrir modal de planos via evento customizado
   useEffect(() => {

@@ -1,14 +1,7 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import { Crown, Save, AlertCircle } from "lucide-react";
+import { Crown, Check, X, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PlanConfig {
@@ -34,11 +27,25 @@ interface PlanConfig {
   price_annual: number | null;
 }
 
-export default function Plans() {
-  const queryClient = useQueryClient();
-  const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Partial<PlanConfig>>({});
+// Recursos principais que diferenciam os planos
+const mainFeatures = [
+  { key: 'atendimento_inteligente', label: 'Atendimento Inteligente', description: 'Chatbot com IA para atendimento' },
+  { key: 'base_conhecimento', label: 'Base de Conhecimento', description: 'Personalização com informações do negócio' },
+  { key: 'agendamento_automatico', label: 'Agendamento Automático', description: 'Sistema de agenda integrado' },
+];
 
+// Recursos secundários
+const secondaryFeatures = [
+  { key: 'lembretes_automaticos', label: 'Lembretes Automáticos' },
+  { key: 'confirmacao_email', label: 'Confirmação por Email' },
+  { key: 'relatorios_avancados', label: 'Relatórios Avançados' },
+  { key: 'integracao_whatsapp', label: 'Integração WhatsApp' },
+  { key: 'multi_usuarios', label: 'Múltiplos Usuários' },
+  { key: 'personalizacao_agente', label: 'Personalização do Agente' },
+  { key: 'analytics', label: 'Analytics' },
+];
+
+export default function Plans() {
   // Carregar planos
   const { data: plans = [], isLoading } = useQuery({
     queryKey: ['admin-subscription-plans'],
@@ -52,43 +59,6 @@ export default function Plans() {
       return data as PlanConfig[];
     },
   });
-
-  // Mutation para atualizar plano
-  const updatePlanMutation = useMutation({
-    mutationFn: async (data: Partial<PlanConfig>) => {
-      const { error } = await supabase
-        .from('subscription_plan_configs')
-        .update(data)
-        .eq('plan_id', editingPlanId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success('Plano atualizado com sucesso!');
-      queryClient.invalidateQueries({ queryKey: ['admin-subscription-plans'] });
-      setEditingPlanId(null);
-      setFormData({});
-    },
-    onError: (error: any) => {
-      console.error('Erro ao atualizar plano:', error);
-      toast.error('Erro ao atualizar plano');
-    },
-  });
-
-  const handleEdit = (plan: PlanConfig) => {
-    setEditingPlanId(plan.plan_id);
-    setFormData(plan);
-  };
-
-  const handleCancel = () => {
-    setEditingPlanId(null);
-    setFormData({});
-  };
-
-  const handleSave = () => {
-    if (!editingPlanId || !formData) return;
-    updatePlanMutation.mutate(formData);
-  };
 
   const getPlanColor = (planId: string) => {
     switch (planId) {
@@ -122,215 +92,171 @@ export default function Plans() {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-purple-100">Gerenciar Planos</h1>
+        <h1 className="text-3xl font-bold text-purple-100">Planos de Assinatura</h1>
         <p className="text-purple-400 mt-1">
-          Configure os recursos, limites e preços de cada plano de assinatura
+          Visualize os planos disponíveis e seus recursos
         </p>
       </div>
 
       {/* Plans Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {plans.map((plan) => {
-          const isEditing = editingPlanId === plan.plan_id;
-          const currentData = isEditing ? formData : plan;
-
-          return (
-            <Card 
-              key={plan.plan_id}
-              className={cn(
-                "border-2 transition-all",
-                getPlanColor(plan.plan_id),
-                isEditing && "ring-2 ring-purple-500"
-              )}
-            >
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Crown className={cn("h-6 w-6", getCrownColor(plan.plan_id))} />
-                    {isEditing ? (
-                      <Input
-                        value={currentData.plan_name || ''}
-                        onChange={(e) => setFormData({ ...formData, plan_name: e.target.value })}
-                        className="font-bold text-lg bg-slate-800/40 border-purple-800/30 text-purple-100"
-                      />
-                    ) : (
-                      <CardTitle className="text-purple-100">{plan.plan_name}</CardTitle>
-                    )}
-                  </div>
-                  {!isEditing && (
-                    <Button
-                      size="sm"
-                      onClick={() => handleEdit(plan)}
-                      className="bg-purple-600 hover:bg-purple-700"
-                    >
-                      Editar
-                    </Button>
-                  )}
-                </div>
-                {isEditing ? (
-                  <Textarea
-                    value={currentData.plan_description || ''}
-                    onChange={(e) => setFormData({ ...formData, plan_description: e.target.value })}
-                    className="mt-2 bg-slate-800/40 border-purple-800/30 text-purple-100"
-                    placeholder="Descrição do plano"
-                  />
-                ) : (
-                  <CardDescription className="text-purple-400">
+        {plans.map((plan) => (
+          <Card 
+            key={plan.plan_id}
+            className={cn(
+              "border-2 transition-all",
+              getPlanColor(plan.plan_id)
+            )}
+          >
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <Crown className={cn("h-6 w-6", getCrownColor(plan.plan_id))} />
+                <div>
+                  <CardTitle className="text-purple-100">{plan.plan_name}</CardTitle>
+                  <CardDescription className="text-purple-400 mt-1">
                     {plan.plan_description}
                   </CardDescription>
-                )}
-              </CardHeader>
-
-              <CardContent className="space-y-6">
-                {/* Preços */}
-                <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-purple-200">Preços</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs text-purple-300">Mensal (R$)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={currentData.price_monthly || ''}
-                        onChange={(e) => setFormData({ ...formData, price_monthly: parseFloat(e.target.value) || null })}
-                        disabled={!isEditing}
-                        className="bg-slate-800/40 border-purple-800/30 text-purple-100"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-purple-300">Anual (R$)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={currentData.price_annual || ''}
-                        onChange={(e) => setFormData({ ...formData, price_annual: parseFloat(e.target.value) || null })}
-                        disabled={!isEditing}
-                        className="bg-slate-800/40 border-purple-800/30 text-purple-100"
-                      />
-                    </div>
-                  </div>
                 </div>
+              </div>
+              
+              {/* Preço */}
+              <div className="mt-4">
+                {plan.price_monthly ? (
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold text-purple-100">
+                      R$ {plan.price_monthly.toFixed(2)}
+                    </span>
+                    <span className="text-purple-400">/mês</span>
+                  </div>
+                ) : (
+                  <span className="text-lg font-semibold text-purple-300">
+                    Sob consulta
+                  </span>
+                )}
+              </div>
+            </CardHeader>
 
-                {/* Recursos */}
-                <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-purple-200">Recursos</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { key: 'atendimento_inteligente', label: 'Atendimento Inteligente' },
-                      { key: 'agendamento_automatico', label: 'Agendamento Automático' },
-                      { key: 'lembretes_automaticos', label: 'Lembretes Automáticos' },
-                      { key: 'confirmacao_email', label: 'Confirmação Email' },
-                      { key: 'base_conhecimento', label: 'Base de Conhecimento' },
-                      { key: 'relatorios_avancados', label: 'Relatórios Avançados' },
-                      { key: 'integracao_whatsapp', label: 'Integração WhatsApp' },
-                      { key: 'multi_usuarios', label: 'Multi Usuários' },
-                      { key: 'personalizacao_agente', label: 'Personalização Agente' },
-                      { key: 'analytics', label: 'Analytics' },
-                    ].map((feature) => (
-                      <div key={feature.key} className="flex items-center justify-between p-2 rounded bg-slate-800/30">
-                        <Label className="text-xs text-purple-300 cursor-pointer" htmlFor={`${plan.plan_id}-${feature.key}`}>
-                          {feature.label}
-                        </Label>
-                        <Switch
-                          id={`${plan.plan_id}-${feature.key}`}
-                          checked={currentData[feature.key as keyof PlanConfig] as boolean}
-                          onCheckedChange={(checked) => setFormData({ ...formData, [feature.key]: checked })}
-                          disabled={!isEditing}
-                        />
+            <CardContent className="space-y-6">
+              {/* Recursos Principais */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-purple-200 uppercase tracking-wide">
+                  Recursos Principais
+                </h3>
+                <div className="space-y-2">
+                  {mainFeatures.map((feature) => {
+                    const isEnabled = plan[feature.key as keyof PlanConfig] as boolean;
+                    return (
+                      <div 
+                        key={feature.key} 
+                        className={cn(
+                          "flex items-center gap-3 p-3 rounded-lg",
+                          isEnabled ? "bg-green-500/10" : "bg-slate-800/30"
+                        )}
+                      >
+                        {isEnabled ? (
+                          <Check className="h-5 w-5 text-green-400 shrink-0" />
+                        ) : (
+                          <X className="h-5 w-5 text-red-400/50 shrink-0" />
+                        )}
+                        <div>
+                          <p className={cn(
+                            "text-sm font-medium",
+                            isEnabled ? "text-purple-100" : "text-purple-400/50"
+                          )}>
+                            {feature.label}
+                          </p>
+                          <p className={cn(
+                            "text-xs",
+                            isEnabled ? "text-purple-300" : "text-purple-500/50"
+                          )}>
+                            {feature.description}
+                          </p>
+                        </div>
                       </div>
-                    ))}
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Recursos Secundários */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-purple-200 uppercase tracking-wide">
+                  Outros Recursos
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {secondaryFeatures.map((feature) => {
+                    const isEnabled = plan[feature.key as keyof PlanConfig] as boolean;
+                    return (
+                      <div 
+                        key={feature.key} 
+                        className="flex items-center gap-2"
+                      >
+                        {isEnabled ? (
+                          <Check className="h-4 w-4 text-green-400 shrink-0" />
+                        ) : (
+                          <X className="h-4 w-4 text-red-400/50 shrink-0" />
+                        )}
+                        <span className={cn(
+                          "text-xs",
+                          isEnabled ? "text-purple-200" : "text-purple-500/50"
+                        )}>
+                          {feature.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Limites */}
+              <div className="space-y-3 pt-3 border-t border-purple-800/30">
+                <h3 className="text-sm font-semibold text-purple-200 uppercase tracking-wide">
+                  Limites
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center p-3 rounded-lg bg-slate-800/30">
+                    <p className="text-2xl font-bold text-purple-100">
+                      {plan.max_agendamentos_mes || '∞'}
+                    </p>
+                    <p className="text-xs text-purple-400">Agendamentos/mês</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-slate-800/30">
+                    <p className="text-2xl font-bold text-purple-100">
+                      {plan.max_mensagens_whatsapp_mes || '∞'}
+                    </p>
+                    <p className="text-xs text-purple-400">Mensagens/mês</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-slate-800/30">
+                    <p className="text-2xl font-bold text-purple-100">
+                      {plan.max_usuarios || '∞'}
+                    </p>
+                    <p className="text-xs text-purple-400">Usuários</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-slate-800/30">
+                    <p className="text-2xl font-bold text-purple-100">
+                      {plan.max_pacientes || '∞'}
+                    </p>
+                    <p className="text-xs text-purple-400">Pacientes</p>
                   </div>
                 </div>
-
-                {/* Limites */}
-                <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-purple-200">Limites (deixe vazio para ilimitado)</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs text-purple-300">Agendamentos/mês</Label>
-                      <Input
-                        type="number"
-                        value={currentData.max_agendamentos_mes || ''}
-                        onChange={(e) => setFormData({ ...formData, max_agendamentos_mes: e.target.value ? parseInt(e.target.value) : null })}
-                        disabled={!isEditing}
-                        placeholder="∞"
-                        className="bg-slate-800/40 border-purple-800/30 text-purple-100"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-purple-300">Mensagens/mês</Label>
-                      <Input
-                        type="number"
-                        value={currentData.max_mensagens_whatsapp_mes || ''}
-                        onChange={(e) => setFormData({ ...formData, max_mensagens_whatsapp_mes: e.target.value ? parseInt(e.target.value) : null })}
-                        disabled={!isEditing}
-                        placeholder="∞"
-                        className="bg-slate-800/40 border-purple-800/30 text-purple-100"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-purple-300">Usuários</Label>
-                      <Input
-                        type="number"
-                        value={currentData.max_usuarios || ''}
-                        onChange={(e) => setFormData({ ...formData, max_usuarios: e.target.value ? parseInt(e.target.value) : null })}
-                        disabled={!isEditing}
-                        placeholder="∞"
-                        className="bg-slate-800/40 border-purple-800/30 text-purple-100"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-purple-300">Pacientes</Label>
-                      <Input
-                        type="number"
-                        value={currentData.max_pacientes || ''}
-                        onChange={(e) => setFormData({ ...formData, max_pacientes: e.target.value ? parseInt(e.target.value) : null })}
-                        disabled={!isEditing}
-                        placeholder="∞"
-                        className="bg-slate-800/40 border-purple-800/30 text-purple-100"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Ações (quando editando) */}
-                {isEditing && (
-                  <div className="flex gap-3 pt-3 border-t border-purple-800/30">
-                    <Button
-                      variant="outline"
-                      onClick={handleCancel}
-                      className="flex-1 border-purple-800/30 text-purple-200"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      onClick={handleSave}
-                      disabled={updatePlanMutation.isPending}
-                      className="flex-1 bg-purple-600 hover:bg-purple-700"
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      {updatePlanMutation.isPending ? 'Salvando...' : 'Salvar'}
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Info Alert */}
-      <Card className="border-amber-500/30 bg-amber-500/5">
+      <Card className="border-purple-500/30 bg-purple-500/5">
         <CardContent className="pt-6">
           <div className="flex gap-3">
-            <AlertCircle className="h-5 w-5 text-amber-500 shrink-0" />
+            <AlertCircle className="h-5 w-5 text-purple-400 shrink-0" />
             <div className="space-y-1">
-              <p className="text-sm font-semibold text-amber-200">
-                Atenção ao editar planos
+              <p className="text-sm font-semibold text-purple-200">
+                Sobre os Planos
               </p>
-              <p className="text-xs text-amber-300">
-                As alterações afetarão imediatamente todas as organizações com o plano selecionado.
-                Os clientes verão as mudanças de recursos e limites na próxima vez que acessarem o sistema.
+              <p className="text-xs text-purple-300">
+                Os recursos de cada plano são fixos. Para alterar o plano de uma organização, 
+                acesse a página de edição da organização em "Organizações".
               </p>
             </div>
           </div>
@@ -339,4 +265,3 @@ export default function Plans() {
     </div>
   );
 }
-
