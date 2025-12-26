@@ -366,6 +366,8 @@ export interface Database {
           sabado_fim_trabalho: string | null
           sabado_inicio_almoco: string | null
           sabado_fim_almoco: string | null
+          // Duração da consulta em minutos (15-240)
+          consultation_duration: number | null
           created_at: string
           updated_at: string
         }
@@ -415,6 +417,8 @@ export interface Database {
           sabado_fim_trabalho?: string | null
           sabado_inicio_almoco?: string | null
           sabado_fim_almoco?: string | null
+          // Duração da consulta em minutos (15-240)
+          consultation_duration?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -464,6 +468,8 @@ export interface Database {
           sabado_fim_trabalho?: string | null
           sabado_inicio_almoco?: string | null
           sabado_fim_almoco?: string | null
+          // Duração da consulta em minutos (15-240)
+          consultation_duration?: number | null
           created_at?: string
           updated_at?: string
         }

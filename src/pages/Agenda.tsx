@@ -49,6 +49,7 @@ interface WorkSchedule {
   quinta: DaySchedule;
   sexta: DaySchedule;
   sabado: DaySchedule;
+  consultation_duration: number; // Duração da consulta em minutos (15-240)
 }
 
 const diasDaSemana = [
@@ -179,6 +180,7 @@ export default function Agenda() {
             inicio_almoco: data.sabado_inicio_almoco || "12:00",
             fim_almoco: data.sabado_fim_almoco || "13:00",
           },
+          consultation_duration: data.consultation_duration || 30,
         };
         console.log('✅ Horários carregados do banco:', schedule);
         setWorkSchedule(schedule);
@@ -193,6 +195,7 @@ export default function Agenda() {
           quinta: { is_active: true, inicio_trabalho: "08:00", fim_trabalho: "18:00", inicio_almoco: "12:00", fim_almoco: "13:00" },
           sexta: { is_active: true, inicio_trabalho: "08:00", fim_trabalho: "18:00", inicio_almoco: "12:00", fim_almoco: "13:00" },
           sabado: { is_active: false, inicio_trabalho: "08:00", fim_trabalho: "18:00", inicio_almoco: "12:00", fim_almoco: "13:00" },
+          consultation_duration: 30,
         };
         console.log('📝 Horários padrão criados:', defaultSchedule);
         setWorkSchedule(defaultSchedule);
@@ -210,6 +213,7 @@ export default function Agenda() {
         quinta: { is_active: true, inicio_trabalho: "08:00", fim_trabalho: "18:00", inicio_almoco: "12:00", fim_almoco: "13:00" },
         sexta: { is_active: true, inicio_trabalho: "08:00", fim_trabalho: "18:00", inicio_almoco: "12:00", fim_almoco: "13:00" },
         sabado: { is_active: false, inicio_trabalho: "08:00", fim_trabalho: "18:00", inicio_almoco: "12:00", fim_almoco: "13:00" },
+        consultation_duration: 30,
       };
       setWorkSchedule(defaultSchedule);
     } finally {
@@ -272,6 +276,8 @@ export default function Agenda() {
         sabado_fim_trabalho: workSchedule.sabado.is_active ? workSchedule.sabado.fim_trabalho : null,
         sabado_inicio_almoco: workSchedule.sabado.is_active ? workSchedule.sabado.inicio_almoco : null,
         sabado_fim_almoco: workSchedule.sabado.is_active ? workSchedule.sabado.fim_almoco : null,
+        // Duração da consulta
+        consultation_duration: workSchedule.consultation_duration,
       };
 
       console.log('💾 Salvando no banco:', dataToSave);
@@ -659,7 +665,7 @@ export default function Agenda() {
         const patient = patients.find(p => p.id === formData.patient_id);
         
         const webhookData = {
-          id: newAppointment.id,
+          id: newAppointment?.id,
           start_datetime: startISOForWebhook,
           end_datetime: endISOForWebhook,
           patient_id: formData.patient_id,
@@ -1225,7 +1231,44 @@ export default function Agenda() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
               </div>
             ) : workSchedule ? (
-              diasDaSemana.map((dia) => {
+              <>
+                {/* Configuração de Duração da Consulta */}
+                <div className="card-luxury p-4 space-y-3 border-accent/30 border-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-5 w-5 text-accent" />
+                    <h3 className="font-semibold text-base">Duração da Consulta</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Defina o tempo padrão de cada consulta. O agente IA usará esse valor para calcular os horários disponíveis.
+                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="consultation_duration">Tempo de cada consulta</Label>
+                    <Select
+                      value={String(workSchedule.consultation_duration)}
+                      onValueChange={(value) => setWorkSchedule(prev => prev ? { ...prev, consultation_duration: Number(value) } : prev)}
+                    >
+                      <SelectTrigger id="consultation_duration" className="w-full">
+                        <SelectValue placeholder="Selecione a duração" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="15">15 minutos</SelectItem>
+                        <SelectItem value="20">20 minutos</SelectItem>
+                        <SelectItem value="30">30 minutos</SelectItem>
+                        <SelectItem value="40">40 minutos</SelectItem>
+                        <SelectItem value="45">45 minutos</SelectItem>
+                        <SelectItem value="50">50 minutos</SelectItem>
+                        <SelectItem value="60">1 hora</SelectItem>
+                        <SelectItem value="90">1 hora e 30 min</SelectItem>
+                        <SelectItem value="120">2 horas</SelectItem>
+                        <SelectItem value="180">3 horas</SelectItem>
+                        <SelectItem value="240">4 horas</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Horários por Dia da Semana */}
+                {diasDaSemana.map((dia) => {
                 const daySchedule = workSchedule[dia.key];
 
                 return (
@@ -1317,7 +1360,8 @@ export default function Agenda() {
                     )}
                   </div>
                 );
-              })
+              })}
+              </>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 Erro ao carregar horários
