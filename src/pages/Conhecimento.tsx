@@ -199,7 +199,7 @@ export default function Conhecimento() {
 
       console.log("Payload enviado:", payload);
 
-      const response = await fetch("https://webhook.u4digital.com.br/webhook/rag-deletar-unico", {
+      const response = await fetch(`${import.meta.env.VITE_N8N_WEBHOOK_URL}rag-deletar-unico`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -252,7 +252,7 @@ export default function Conhecimento() {
 
       console.log("Payload enviado:", payload);
 
-      const response = await fetch("https://webhook.u4digital.com.br/webhook/rag-deletar-tudo", {
+      const response = await fetch(`${import.meta.env.VITE_N8N_WEBHOOK_URL}rag-deletar-tudo`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -385,7 +385,7 @@ export default function Conhecimento() {
         organizationName: organization.name,
       });
 
-      const response = await fetch("https://webhook.u4digital.com.br/webhook/rag-cliente", {
+      const response = await fetch(`${import.meta.env.VITE_N8N_WEBHOOK_URL}rag-cliente`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -808,7 +808,7 @@ export default function Conhecimento() {
               Tem certeza que deseja excluir o documento <strong>"{documentToDelete?.titulo}"</strong>?
               <br />
               <br />
-              Esta ação não pode ser desfeita e o documento será removido permanentemente da base de conhecimento do Agent IA.
+              Esta ação não pode ser desfeita e o documento será removido permanentemente da base de conhecimento do Agente de IA.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
