@@ -1,6 +1,10 @@
-# LuxClinic - Premium Clinic Dashboard
+# Flow Clinic - Premium Clinic Dashboard
 
-Dashboard elegante e moderno para gestão de clínicas de saúde, 100% otimizado para dispositivos móveis e desktop.
+Dashboard elegante e moderno para gestão de clínicas de saúde, desenvolvido pela **Flowgrammers**. 100% otimizado para dispositivos móveis e desktop.
+
+## 🏢 Sobre
+
+**Flow Clinic** é uma solução completa de gestão para clínicas de saúde, desenvolvida com tecnologia de ponta pela **Flowgrammers**, oferecendo uma experiência premium e intuitiva para profissionais da área médica.
 
 ## ✨ Funcionalidades
 
@@ -60,6 +64,7 @@ Dashboard elegante e moderno para gestão de clínicas de saúde, 100% otimizado
 - **React Router** - Navegação
 - **Radix UI** - Componentes acessíveis
 - **Lucide React** - Ícones modernos
+- **Supabase** - Backend e autenticação
 
 ## 💻 Como Executar
 
@@ -121,20 +126,20 @@ src/
 │   ├── NavLink.tsx   # Links de navegação
 │   └── KPICard.tsx   # Cards de métricas
 ├── contexts/
-│   └── ThemeContext.tsx  # Contexto de tema
+│   ├── ThemeContext.tsx  # Contexto de tema
+│   └── AuthContext.tsx   # Contexto de autenticação
 ├── pages/
 │   ├── Dashboard.tsx
 │   ├── Agenda.tsx
 │   ├── CRM.tsx
-│   ├── Subscription.tsx
-│   ├── Integrations.tsx
-│   └── NotFound.tsx
-├── lib/
-│   └── utils.ts      # Utilitários
-├── App.tsx
-├── main.tsx
-└── index.css         # Estilos globais
-
+│   ├── Conhecimento.tsx
+│   ├── AgentIA.tsx
+│   ├── Kanban.tsx
+│   └── super-admin/  # Painel super admin
+├── hooks/            # Custom hooks
+├── lib/              # Utilitários
+├── integrations/     # Integrações (Supabase)
+└── types/            # TypeScript types
 ```
 
 ## 🔧 Configuração
@@ -144,6 +149,8 @@ O projeto está configurado com:
 - TypeScript strict mode
 - Path aliases (@/)
 - Tailwind CSS com plugins de animação
+- Supabase para backend e autenticação
+- Sistema multi-tenant
 
 ## 📄 Licença
 
@@ -151,8 +158,10 @@ Este projeto é privado e proprietário.
 
 ## 👨‍💻 Desenvolvido por
 
-LuxClinic Team
+**Flowgrammers**
 
 ---
 
 **Nota**: Este projeto foi otimizado para oferecer a melhor experiência possível tanto em dispositivos móveis quanto em desktops, com atenção especial a performance, acessibilidade e design premium.
+
+**Flow Clinic** - Solução completa de gestão para clínicas de saúde.
