@@ -1,15 +1,40 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// Função para obter headers CORS baseado na origem
+const getCorsHeaders = (origin: string | null) => {
+  const allowedOrigins = [
+    'http://localhost:8080',
+    'http://localhost:8081',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://127.0.0.1:8080',
+    'http://127.0.0.1:8081',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
+  ];
+  
+  const originHeader = origin && allowedOrigins.includes(origin) ? origin : '*';
+  
+  return {
+    'Access-Control-Allow-Origin': originHeader,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Max-Age': '86400',
+    'Access-Control-Allow-Credentials': 'true',
+  };
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { 
+      status: 204,
+      headers: corsHeaders 
+    })
   }
 
   try {
@@ -18,18 +43,19 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     
-    // Pegar anon key do header apikey (enviado pelo cliente) ou variável de ambiente
-    const apikey = req.headers.get('apikey') || Deno.env.get('SUPABASE_ANON_KEY') || '';
-
     // Verificar se usuário logado é super admin
     const authHeader = req.headers.get('Authorization')
+    const apikeyHeader = req.headers.get('apikey')
+    
     console.log('🔑 Authorization header presente:', !!authHeader);
-    console.log('🔑 Apikey header presente:', !!req.headers.get('apikey'));
+    console.log('🔑 Apikey header presente:', !!apikeyHeader);
+    console.log('🔑 Supabase URL:', supabaseUrl);
+    console.log('🔑 Service Key presente:', !!supabaseServiceKey);
     
     if (!authHeader) {
       console.error('❌ Nenhum header de autorização encontrado');
       return new Response(
-        JSON.stringify({ error: 'Não autenticado' }),
+        JSON.stringify({ error: 'Não autenticado: header Authorization ausente' }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 401 
@@ -37,10 +63,20 @@ serve(async (req) => {
       )
     }
     
+    // Extrair token do header
+    const token = authHeader.replace('Bearer ', '').trim();
+    console.log('🔑 Token extraído (primeiros 30 chars):', token.substring(0, 30) + '...');
+    
+    // Usar anon key do header ou variável de ambiente (OBRIGATÓRIO)
+    const apikey = apikeyHeader || Deno.env.get('SUPABASE_ANON_KEY') || '';
+    
     if (!apikey) {
-      console.error('❌ Anon key não encontrada');
+      console.error('❌ Anon key não encontrada - necessário para validar token');
       return new Response(
-        JSON.stringify({ error: 'Chave de API não configurada' }),
+        JSON.stringify({ 
+          error: 'Configuração inválida: anon key não encontrada',
+          hint: 'Certifique-se de enviar o header "apikey" ou configurar SUPABASE_ANON_KEY'
+        }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500 
@@ -48,7 +84,8 @@ serve(async (req) => {
       )
     }
     
-    // Criar cliente com anon key para validar o token do usuário
+    // SEMPRE usar anon key para validar token (mais confiável)
+    console.log('🔑 Validando token com anon key...');
     const supabaseClient = createClient(supabaseUrl, apikey, {
       global: {
         headers: {
@@ -60,8 +97,8 @@ serve(async (req) => {
         persistSession: false
       }
     })
-
-    // Validar token do usuário usando anon key
+    
+    // Validar token usando anon key
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     
     console.log('👤 Resultado getUser - user:', user?.id);
@@ -69,11 +106,31 @@ serve(async (req) => {
     
     if (userError) {
       console.error('❌ Erro ao verificar usuário:', userError);
-      console.error('❌ Detalhes do erro:', JSON.stringify(userError, null, 2));
+      console.error('❌ Tipo do erro:', userError.name);
+      console.error('❌ Mensagem do erro:', userError.message);
+      console.error('❌ Status do erro:', userError.status);
+      
+      // Se o erro for de JWT inválido, dar dica sobre verificação JWT
+      if (userError.message?.includes('JWT') || userError.message?.includes('Invalid')) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Token inválido ou expirado',
+            details: userError.message,
+            hint: 'Verifique se a opção "Verify JWT" está DESATIVADA nas configurações da função no Supabase Dashboard',
+            code: 401
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 401 
+          }
+        )
+      }
+      
       return new Response(
         JSON.stringify({ 
           error: 'Token inválido ou expirado',
-          details: userError.message 
+          details: userError.message,
+          code: 401
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -85,7 +142,10 @@ serve(async (req) => {
     if (!user) {
       console.error('❌ Usuário não encontrado no token');
       return new Response(
-        JSON.stringify({ error: 'Token inválido: usuário não encontrado' }),
+        JSON.stringify({ 
+          error: 'Token inválido: usuário não encontrado',
+          hint: 'O token pode estar expirado. Faça logout e login novamente.'
+        }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 401 
@@ -94,7 +154,7 @@ serve(async (req) => {
     }
 
     console.log('✅ Usuário autenticado:', user.id);
-
+    
     // Criar cliente Supabase com Service Role (admin) para operações administrativas
     const supabaseAdmin = createClient(
       supabaseUrl,
@@ -138,15 +198,15 @@ serve(async (req) => {
     console.log('📋 Criando organização:', organizationName)
 
     // 1. Criar usuário no Supabase Auth
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    const { data: authData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
       email: adminEmail,
       password: adminPassword,
       email_confirm: true,
     })
 
-    if (authError) {
-      console.error('❌ Erro ao criar usuário:', authError)
-      throw authError
+    if (createUserError) {
+      console.error('❌ Erro ao criar usuário:', createUserError)
+      throw createUserError
     }
 
     if (!authData.user) {

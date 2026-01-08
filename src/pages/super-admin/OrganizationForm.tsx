@@ -101,18 +101,66 @@ export default function OrganizationForm() {
     const fileExt = file.name.split('.').pop();
     const fileName = `${orgId}-${Date.now()}.${fileExt}`;
     const filePath = `${fileName}`;
+    const bucketName = 'organization-logos';
 
+    // Verificar se o bucket existe
+    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+    
+    if (listError) {
+      console.error('Erro ao listar buckets:', listError);
+      // Se não conseguir listar, tentar fazer upload mesmo assim
+      // (pode ser problema de permissão, mas o bucket pode existir)
+    } else {
+      const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+      
+      if (!bucketExists) {
+        const errorMessage = `Bucket '${bucketName}' não encontrado. ` +
+          `Por favor, crie o bucket no Supabase Dashboard:\n\n` +
+          `1. Acesse: https://supabase.com/dashboard\n` +
+          `2. Vá em Storage\n` +
+          `3. Clique em "New Bucket" ou "Create a new bucket"\n` +
+          `4. Nome: "${bucketName}"\n` +
+          `5. Marque "Public bucket"\n` +
+          `6. File size limit: 2 MB\n` +
+          `7. Allowed MIME types: image/*\n` +
+          `8. Clique em "Create bucket"`;
+        
+        toast.error(errorMessage, { duration: 10000 });
+        throw new Error(errorMessage);
+      }
+    }
+
+    // Fazer upload do arquivo
     const { data, error } = await supabase.storage
-      .from('organization-logos')
+      .from(bucketName)
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: true,
       });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Erro ao fazer upload:', error);
+      
+      // Mensagem de erro mais clara para bucket não encontrado
+      if (error.message?.includes('Bucket not found') || error.message?.includes('not found')) {
+        const errorMessage = `Bucket '${bucketName}' não encontrado.\n\n` +
+          `Por favor, crie o bucket no Supabase Dashboard:\n\n` +
+          `1. Acesse: https://supabase.com/dashboard\n` +
+          `2. Vá em Storage\n` +
+          `3. Clique em "New Bucket"\n` +
+          `4. Nome: "${bucketName}"\n` +
+          `5. Marque "Public bucket" ✅\n` +
+          `6. Clique em "Create bucket"`;
+        
+        toast.error(errorMessage, { duration: 10000 });
+        throw new Error(errorMessage);
+      }
+      
+      throw error;
+    }
 
     const { data: { publicUrl } } = supabase.storage
-      .from('organization-logos')
+      .from(bucketName)
       .getPublicUrl(filePath);
 
     return publicUrl;
