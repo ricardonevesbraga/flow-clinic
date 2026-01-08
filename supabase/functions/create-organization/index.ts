@@ -15,10 +15,90 @@ serve(async (req) => {
   try {
     console.log('🚀 Iniciando create-organization Edge Function...');
     
-    // Criar cliente Supabase com Service Role (admin)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    
+    // Pegar anon key do header apikey (enviado pelo cliente) ou variável de ambiente
+    const apikey = req.headers.get('apikey') || Deno.env.get('SUPABASE_ANON_KEY') || '';
+
+    // Verificar se usuário logado é super admin
+    const authHeader = req.headers.get('Authorization')
+    console.log('🔑 Authorization header presente:', !!authHeader);
+    console.log('🔑 Apikey header presente:', !!req.headers.get('apikey'));
+    
+    if (!authHeader) {
+      console.error('❌ Nenhum header de autorização encontrado');
+      return new Response(
+        JSON.stringify({ error: 'Não autenticado' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401 
+        }
+      )
+    }
+    
+    if (!apikey) {
+      console.error('❌ Anon key não encontrada');
+      return new Response(
+        JSON.stringify({ error: 'Chave de API não configurada' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      )
+    }
+    
+    // Criar cliente com anon key para validar o token do usuário
+    const supabaseClient = createClient(supabaseUrl, apikey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+        },
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+
+    // Validar token do usuário usando anon key
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+    
+    console.log('👤 Resultado getUser - user:', user?.id);
+    console.log('👤 Resultado getUser - error:', userError);
+    
+    if (userError) {
+      console.error('❌ Erro ao verificar usuário:', userError);
+      console.error('❌ Detalhes do erro:', JSON.stringify(userError, null, 2));
+      return new Response(
+        JSON.stringify({ 
+          error: 'Token inválido ou expirado',
+          details: userError.message 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401 
+        }
+      )
+    }
+    
+    if (!user) {
+      console.error('❌ Usuário não encontrado no token');
+      return new Response(
+        JSON.stringify({ error: 'Token inválido: usuário não encontrado' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401 
+        }
+      )
+    }
+
+    console.log('✅ Usuário autenticado:', user.id);
+
+    // Criar cliente Supabase com Service Role (admin) para operações administrativas
     const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      supabaseUrl,
+      supabaseServiceKey,
       {
         auth: {
           autoRefreshToken: false,
@@ -26,35 +106,6 @@ serve(async (req) => {
         }
       }
     )
-
-    // Verificar se usuário logado é super admin
-    const authHeader = req.headers.get('Authorization')
-    console.log('🔑 Authorization header presente:', !!authHeader);
-    
-    if (!authHeader) {
-      console.error('❌ Nenhum header de autorização encontrado');
-      throw new Error('Não autenticado')
-    }
-    
-    const token = authHeader.replace('Bearer ', '')
-    console.log('🔑 Token extraído (primeiros 20 chars):', token.substring(0, 20) + '...');
-    
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
-    
-    console.log('👤 Resultado getUser - user:', user?.id);
-    console.log('👤 Resultado getUser - error:', userError);
-    
-    if (userError) {
-      console.error('❌ Erro ao verificar usuário:', userError);
-      throw new Error('Não autenticado: ' + userError.message)
-    }
-    
-    if (!user) {
-      console.error('❌ Usuário não encontrado no token');
-      throw new Error('Não autenticado')
-    }
-
-    console.log('✅ Usuário autenticado:', user.id);
 
     // Verificar se é super admin
     const { data: profile, error: profileError } = await supabaseAdmin

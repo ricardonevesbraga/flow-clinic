@@ -40,12 +40,12 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background p-4">
-      <Card className="w-full max-w-md card-luxury">
+      <Card className="w-full max-w-md card-luxury border-border/50">
         <CardHeader className="space-y-2 text-center">
-          <CardTitle className="font-display text-3xl font-bold tracking-tight">
-            LuxClinic Concierge
+          <CardTitle className="text-3xl font-bold tracking-tight text-foreground">
+            🏥 FlowClinic 🏥
           </CardTitle>
-          <CardDescription className="text-base">
+          <CardDescription className="text-base text-muted-foreground">
             Entre com suas credenciais para acessar o sistema
           </CardDescription>
         </CardHeader>
@@ -53,7 +53,7 @@ export default function Login() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-foreground">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -63,11 +63,12 @@ export default function Login() {
                 required
                 disabled={loading}
                 autoComplete="email"
+                className="bg-background border-input text-foreground placeholder:text-muted-foreground"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password" className="text-foreground">Senha</Label>
               <Input
                 id="password"
                 type="password"
@@ -77,13 +78,14 @@ export default function Login() {
                 required
                 disabled={loading}
                 autoComplete="current-password"
+                className="bg-background border-input text-foreground placeholder:text-muted-foreground"
               />
             </div>
 
             <div className="text-right">
               <Link
                 to="/forgot-password"
-                className="text-sm text-accent hover:underline"
+                className="text-sm text-accent hover:text-accent/80 hover:underline transition-colors"
               >
                 Esqueceu sua senha?
               </Link>
@@ -93,7 +95,7 @@ export default function Login() {
           <CardFooter className="flex flex-col space-y-4">
             <Button
               type="submit"
-              className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+              className="w-full bg-accent text-accent-foreground hover:bg-accent/90 transition-colors"
               disabled={loading}
             >
               {loading ? 'Entrando...' : 'Entrar'}
@@ -101,7 +103,7 @@ export default function Login() {
 
             <p className="text-sm text-center text-muted-foreground">
               Não tem uma conta?{' '}
-              <Link to="/register" className="text-accent font-semibold hover:underline">
+              <Link to="/register" className="text-accent font-semibold hover:text-accent/80 hover:underline transition-colors">
                 Cadastre-se
               </Link>
             </p>

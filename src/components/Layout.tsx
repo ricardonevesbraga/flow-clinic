@@ -158,7 +158,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             />
           ) : (
             <h1 className="font-display text-xl md:text-2xl font-bold tracking-tight text-foreground">
-              Lux<span className="text-accent">Clinic</span>
+              Flow<span className="text-accent">Clinic</span>
             </h1>
           )}
           <Button
@@ -530,7 +530,7 @@ export default function Layout() {
       {/* Mobile Header */}
       <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-b border-border/50 bg-card/95 backdrop-blur-sm px-4 lg:hidden">
         <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
-          Lux<span className="text-accent">Clinic</span>
+          Flow<span className="text-accent">Clinic</span>
         </h1>
         
         <div className="flex items-center gap-2">

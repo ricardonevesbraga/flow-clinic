@@ -60,12 +60,12 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background p-4">
-      <Card className="w-full max-w-md card-luxury">
+      <Card className="w-full max-w-md card-luxury border-border/50">
         <CardHeader className="space-y-2 text-center">
-          <CardTitle className="font-display text-3xl font-bold tracking-tight">
+          <CardTitle className="text-3xl font-bold tracking-tight text-foreground">
             Criar Conta
           </CardTitle>
-          <CardDescription className="text-base">
+          <CardDescription className="text-base text-muted-foreground">
             Crie sua conta e comece a gerenciar sua clínica
           </CardDescription>
         </CardHeader>
@@ -73,7 +73,7 @@ export default function Register() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="organizationName">Nome da Clínica *</Label>
+              <Label htmlFor="organizationName" className="text-foreground">Nome da Clínica *</Label>
               <Input
                 id="organizationName"
                 name="organizationName"
@@ -83,11 +83,12 @@ export default function Register() {
                 onChange={handleChange}
                 required
                 disabled={loading}
+                className="bg-background border-input text-foreground placeholder:text-muted-foreground"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="fullName">Seu Nome Completo *</Label>
+              <Label htmlFor="fullName" className="text-foreground">Seu Nome Completo *</Label>
               <Input
                 id="fullName"
                 name="fullName"
@@ -97,11 +98,12 @@ export default function Register() {
                 onChange={handleChange}
                 required
                 disabled={loading}
+                className="bg-background border-input text-foreground placeholder:text-muted-foreground"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="email" className="text-foreground">Email *</Label>
               <Input
                 id="email"
                 name="email"
@@ -112,11 +114,12 @@ export default function Register() {
                 required
                 disabled={loading}
                 autoComplete="email"
+                className="bg-background border-input text-foreground placeholder:text-muted-foreground"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Senha *</Label>
+              <Label htmlFor="password" className="text-foreground">Senha *</Label>
               <Input
                 id="password"
                 name="password"
@@ -128,6 +131,7 @@ export default function Register() {
                 disabled={loading}
                 minLength={6}
                 autoComplete="new-password"
+                className="bg-background border-input text-foreground placeholder:text-muted-foreground"
               />
               <p className="text-xs text-muted-foreground">
                 Mínimo de 6 caracteres
@@ -135,7 +139,7 @@ export default function Register() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Senha *</Label>
+              <Label htmlFor="confirmPassword" className="text-foreground">Confirmar Senha *</Label>
               <Input
                 id="confirmPassword"
                 name="confirmPassword"
@@ -147,6 +151,7 @@ export default function Register() {
                 disabled={loading}
                 minLength={6}
                 autoComplete="new-password"
+                className="bg-background border-input text-foreground placeholder:text-muted-foreground"
               />
             </div>
           </CardContent>
@@ -154,7 +159,7 @@ export default function Register() {
           <CardFooter className="flex flex-col space-y-4">
             <Button
               type="submit"
-              className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+              className="w-full bg-accent text-accent-foreground hover:bg-accent/90 transition-colors"
               disabled={loading}
             >
               {loading ? 'Criando conta...' : 'Criar Conta'}
@@ -162,7 +167,7 @@ export default function Register() {
 
             <p className="text-sm text-center text-muted-foreground">
               Já tem uma conta?{' '}
-              <Link to="/login" className="text-accent font-semibold hover:underline">
+              <Link to="/login" className="text-accent font-semibold hover:text-accent/80 hover:underline transition-colors">
                 Faça login
               </Link>
             </p>

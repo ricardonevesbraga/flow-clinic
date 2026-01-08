@@ -31,7 +31,7 @@ export default function SuperAdminLayout() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-purple-950 via-slate-900 to-slate-950">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950">
       {/* Sidebar Mobile Overlay */}
       {isSidebarOpen && (
         <div
@@ -43,22 +43,22 @@ export default function SuperAdminLayout() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-50 h-full w-64 transform border-r border-purple-800/30 bg-gradient-to-b from-purple-900/40 to-slate-900/40 backdrop-blur-xl transition-transform duration-300 lg:relative lg:translate-x-0",
+          "fixed left-0 top-0 z-50 h-full w-64 transform border-r border-blue-800/30 bg-gradient-to-b from-blue-900/40 to-slate-900/40 backdrop-blur-xl transition-transform duration-300 lg:relative lg:translate-x-0",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Header */}
-        <div className="flex h-16 items-center justify-between border-b border-purple-800/30 px-4">
+        <div className="flex h-16 items-center justify-between border-b border-blue-800/30 px-4">
           <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-purple-400" />
-            <h1 className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Super Admin
+            <Shield className="h-6 w-6 text-blue-400" />
+            <h1 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+              Admin FlowClinic
             </h1>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden text-purple-300 hover:text-purple-100 hover:bg-purple-800/30"
+            className="lg:hidden text-blue-300 hover:text-blue-100 hover:bg-blue-800/30"
             onClick={() => setIsSidebarOpen(false)}
           >
             <X className="h-5 w-5" />
@@ -66,16 +66,16 @@ export default function SuperAdminLayout() {
         </div>
 
         {/* User Info */}
-        <div className="border-b border-purple-800/30 p-4">
+        <div className="border-b border-blue-800/30 p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-500">
               <Shield className="h-5 w-5 text-white" />
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="truncate text-sm font-semibold text-purple-100">
+              <p className="truncate text-sm font-semibold text-blue-100">
                 {profile?.full_name || "Admin"}
               </p>
-              <p className="text-xs text-purple-400">Administrador Master</p>
+              <p className="text-xs text-blue-400">Admin</p>
             </div>
           </div>
         </div>
@@ -96,8 +96,8 @@ export default function SuperAdminLayout() {
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
                   isActive
-                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/50"
-                    : "text-purple-300 hover:bg-purple-800/30 hover:text-purple-100"
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/50"
+                    : "text-blue-300 hover:bg-blue-800/30 hover:text-blue-100"
                 )}
               >
                 <Icon className="h-5 w-5" />
@@ -108,11 +108,11 @@ export default function SuperAdminLayout() {
         </nav>
 
         {/* Logout Button */}
-        <div className="border-t border-purple-800/30 p-4">
+        <div className="border-t border-blue-800/30 p-4">
           <Button
             onClick={handleLogout}
             variant="ghost"
-            className="w-full justify-start text-purple-300 hover:bg-red-900/30 hover:text-red-300"
+            className="w-full justify-start text-blue-300 hover:bg-red-900/30 hover:text-red-300"
           >
             <LogOut className="mr-2 h-5 w-5" />
             Sair
@@ -123,26 +123,26 @@ export default function SuperAdminLayout() {
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top Bar */}
-        <header className="flex h-16 items-center border-b border-purple-800/30 bg-slate-900/40 backdrop-blur-xl px-4 lg:px-6">
+        <header className="flex h-16 items-center border-b border-blue-800/30 bg-slate-900/40 backdrop-blur-xl px-4 lg:px-6">
           <Button
             variant="ghost"
             size="icon"
-            className="mr-2 text-purple-300 hover:text-purple-100 hover:bg-purple-800/30 lg:hidden"
+            className="mr-2 text-blue-300 hover:text-blue-100 hover:bg-blue-800/30 lg:hidden"
             onClick={() => setIsSidebarOpen(true)}
           >
             <Menu className="h-5 w-5" />
           </Button>
 
           <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-purple-400" />
-            <h2 className="text-sm font-semibold text-purple-100">
-              Painel Administrativo
+            <Shield className="h-5 w-5 text-blue-400" />
+            <h2 className="text-sm font-semibold text-blue-100">
+              Admin FlowClinic
             </h2>
           </div>
 
           <div className="ml-auto">
-            <span className="inline-flex items-center rounded-full bg-purple-600/20 px-3 py-1 text-xs font-semibold text-purple-300 ring-1 ring-purple-500/30">
-              Super Admin
+            <span className="inline-flex items-center rounded-full bg-blue-600/20 px-3 py-1 text-xs font-semibold text-blue-300 ring-1 ring-blue-500/30">
+               Admin
             </span>
           </div>
         </header>

@@ -171,7 +171,7 @@ export default function OrganizationForm() {
 
       console.log("Configurando webhook, payload:", payload);
 
-      const response = await fetch("https://webhook.u4digital.com.br/webhook/configurar-webhook", {
+      const response = await fetch(`${import.meta.env.VITE_N8N_WEBHOOK_URL}configurar-webhook`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -291,7 +291,7 @@ export default function OrganizationForm() {
       console.log("Enviando dados para criação de workflow:", payload);
 
       // Chamar webhook
-      const response = await fetch("https://webhook.u4digital.com.br/webhook/criacao-fluxo", {
+      const response = await fetch(`${import.meta.env.VITE_N8N_WEBHOOK_URL}criacao-fluxo`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -396,6 +396,15 @@ export default function OrganizationForm() {
       console.log("🔍 Iniciando saveMutation...");
       console.log("🔍 isEditing:", isEditing);
       
+      // Obter sessão atualizada (getUser força atualização do token)
+      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !currentUser) {
+        console.error("❌ Erro ao obter usuário:", userError);
+        throw new Error("Sessão expirada. Por favor, faça logout e login novamente.");
+      }
+
+      // Obter sessão atualizada
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       console.log("🔍 Session completa:", JSON.stringify(session, null, 2));
@@ -446,7 +455,8 @@ export default function OrganizationForm() {
         console.log("📞 Chamando Edge Function create-organization...");
         console.log("📞 URL:", `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-organization`);
         console.log("📞 VITE_SUPABASE_URL:", import.meta.env.VITE_SUPABASE_URL);
-        console.log("📞 Authorization Header:", `Bearer ${session.access_token.substring(0, 50)}...`);
+        console.log("📞 Access Token presente:", !!session.access_token);
+        console.log("📞 Access Token (primeiros 50 chars):", session.access_token.substring(0, 50) + '...');
         console.log("📞 Payload:", {
           organizationName: data.name,
           adminEmail: data.adminEmail,
@@ -455,6 +465,12 @@ export default function OrganizationForm() {
           subscriptionPlan: data.subscription_plan,
         });
         
+        // Verificar se a chave pública está disponível
+        const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        if (!apikey) {
+          throw new Error("Chave de API do Supabase não configurada");
+        }
+        
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-organization`,
           {
@@ -462,6 +478,7 @@ export default function OrganizationForm() {
             headers: {
               "Content-Type": "application/json",
               "Authorization": `Bearer ${session.access_token}`,
+              "apikey": apikey,
             },
             body: JSON.stringify({
               organizationName: data.name,
@@ -476,7 +493,6 @@ export default function OrganizationForm() {
 
         console.log("📞 Response status:", response.status);
         console.log("📞 Response statusText:", response.statusText);
-        console.log("📞 Response headers:", Object.fromEntries(response.headers.entries()));
         
         const result = await response.json();
         console.log("📞 Response body:", result);
@@ -526,6 +542,11 @@ export default function OrganizationForm() {
       }
 
       // Chamar Edge Function
+      const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      if (!apikey) {
+        throw new Error("Chave de API do Supabase não configurada");
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-organization-users`,
         {
@@ -533,6 +554,7 @@ export default function OrganizationForm() {
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${session.access_token}`,
+            "apikey": apikey,
           },
           body: JSON.stringify({
             action: "create",
@@ -581,6 +603,11 @@ export default function OrganizationForm() {
       }
 
       // Chamar Edge Function
+      const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      if (!apikey) {
+        throw new Error("Chave de API do Supabase não configurada");
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-organization-users`,
         {
@@ -588,6 +615,7 @@ export default function OrganizationForm() {
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${session.access_token}`,
+            "apikey": apikey,
           },
           body: JSON.stringify({
             action: "delete",
@@ -623,15 +651,15 @@ export default function OrganizationForm() {
           variant="ghost"
           size="icon"
           onClick={() => navigate("/super-admin/organizations")}
-          className="text-purple-300 hover:text-purple-100 hover:bg-purple-800/30"
+          className="text-blue-300 hover:text-blue-100 hover:bg-blue-800/30"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-purple-100">
+          <h1 className="text-3xl font-bold text-blue-100">
             {isEditing ? "Editar Organização" : "Nova Organização"}
           </h1>
-          <p className="text-purple-400 mt-1">
+          <p className="text-blue-400 mt-1">
             {isEditing
               ? "Atualize as informações da organização"
               : "Crie uma nova clínica/consultório e seu administrador"}
@@ -642,23 +670,23 @@ export default function OrganizationForm() {
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Organization Info */}
-        <Card className="border-purple-800/30 bg-slate-900/40 backdrop-blur-xl">
+        <Card className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl">
           <CardHeader>
-            <CardTitle className="text-purple-100">Informações da Organização</CardTitle>
-            <CardDescription className="text-purple-400">
+            <CardTitle className="text-blue-100">Informações da Organização</CardTitle>
+            <CardDescription className="text-blue-400">
               Dados básicos da clínica/consultório
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="name" className="text-purple-200">
+              <Label htmlFor="name" className="text-blue-200">
                 Nome da Organização *
               </Label>
               <Input
                 id="name"
                 {...register("name", { required: "Nome é obrigatório" })}
                 placeholder="Ex: Clínica São Paulo"
-                className="mt-1.5 bg-slate-800/40 border-purple-800/30 text-purple-100 placeholder:text-purple-400/50"
+                className="mt-1.5 bg-slate-800/40 border-blue-800/30 text-blue-100 placeholder:text-blue-400/50"
               />
               {errors.name && (
                 <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>
@@ -666,7 +694,7 @@ export default function OrganizationForm() {
             </div>
 
             <div>
-              <Label htmlFor="contact_email" className="text-purple-200">
+              <Label htmlFor="contact_email" className="text-blue-200">
                 E-mail de Contato
               </Label>
               <Input
@@ -674,22 +702,22 @@ export default function OrganizationForm() {
                 type="email"
                 {...register("contact_email")}
                 placeholder="contato@clinica.com"
-                className="mt-1.5 bg-slate-800/40 border-purple-800/30 text-purple-100 placeholder:text-purple-400/50"
+                className="mt-1.5 bg-slate-800/40 border-blue-800/30 text-blue-100 placeholder:text-blue-400/50"
               />
-              <p className="text-xs text-purple-400 mt-1">
+              <p className="text-xs text-blue-400 mt-1">
                 E-mail usado para envio de confirmações de agendamento
               </p>
             </div>
 
             {/* Plano de Assinatura */}
             <div className="space-y-2">
-              <Label htmlFor="subscription_plan" className="text-purple-200">
+              <Label htmlFor="subscription_plan" className="text-blue-200">
                 Plano de Assinatura *
               </Label>
               <select
                 id="subscription_plan"
                 {...register("subscription_plan", { required: "Plano é obrigatório" })}
-                className="w-full h-10 px-3 rounded-md bg-slate-800/40 border border-purple-800/30 text-purple-100 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                className="w-full h-10 px-3 rounded-md bg-slate-800/40 border border-blue-800/30 text-blue-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               >
                 {plans.map((plan) => (
                   <option key={plan.plan_id} value={plan.plan_id}>
@@ -703,73 +731,73 @@ export default function OrganizationForm() {
               
               {/* Descrição do Plano Selecionado */}
               {subscriptionPlan && plans.find(p => p.plan_id === subscriptionPlan) && (
-                <div className="mt-3 p-4 rounded-lg bg-purple-900/20 border border-purple-800/30">
-                  <p className="text-sm text-purple-200 mb-3">
+                <div className="mt-3 p-4 rounded-lg bg-blue-900/20 border border-blue-800/30">
+                  <p className="text-sm text-blue-200 mb-3">
                     {plans.find(p => p.plan_id === subscriptionPlan)?.plan_description}
                   </p>
                   
                   {/* Recursos do Plano */}
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-purple-300 uppercase tracking-wide">
+                    <p className="text-xs font-semibold text-blue-300 uppercase tracking-wide">
                       Recursos Inclusos:
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       {plans.find(p => p.plan_id === subscriptionPlan)?.atendimento_inteligente && (
-                        <div className="flex items-center gap-2 text-xs text-purple-200">
+                        <div className="flex items-center gap-2 text-xs text-blue-200">
                           <Check className="h-3 w-3 text-green-400" />
                           <span>Atendimento Inteligente</span>
                         </div>
                       )}
                       {plans.find(p => p.plan_id === subscriptionPlan)?.agendamento_automatico && (
-                        <div className="flex items-center gap-2 text-xs text-purple-200">
+                        <div className="flex items-center gap-2 text-xs text-blue-200">
                           <Check className="h-3 w-3 text-green-400" />
                           <span>Agendamento Automático</span>
                         </div>
                       )}
                       {plans.find(p => p.plan_id === subscriptionPlan)?.lembretes_automaticos && (
-                        <div className="flex items-center gap-2 text-xs text-purple-200">
+                        <div className="flex items-center gap-2 text-xs text-blue-200">
                           <Check className="h-3 w-3 text-green-400" />
                           <span>Lembretes Automáticos</span>
                         </div>
                       )}
                       {plans.find(p => p.plan_id === subscriptionPlan)?.confirmacao_email && (
-                        <div className="flex items-center gap-2 text-xs text-purple-200">
+                        <div className="flex items-center gap-2 text-xs text-blue-200">
                           <Check className="h-3 w-3 text-green-400" />
                           <span>Confirmação por Email</span>
                         </div>
                       )}
                       {plans.find(p => p.plan_id === subscriptionPlan)?.base_conhecimento && (
-                        <div className="flex items-center gap-2 text-xs text-purple-200">
+                        <div className="flex items-center gap-2 text-xs text-blue-200">
                           <Check className="h-3 w-3 text-green-400" />
                           <span>Base de Conhecimento</span>
                         </div>
                       )}
                       {plans.find(p => p.plan_id === subscriptionPlan)?.relatorios_avancados && (
-                        <div className="flex items-center gap-2 text-xs text-purple-200">
+                        <div className="flex items-center gap-2 text-xs text-blue-200">
                           <Check className="h-3 w-3 text-green-400" />
                           <span>Relatórios Avançados</span>
                         </div>
                       )}
                       {plans.find(p => p.plan_id === subscriptionPlan)?.integracao_whatsapp && (
-                        <div className="flex items-center gap-2 text-xs text-purple-200">
+                        <div className="flex items-center gap-2 text-xs text-blue-200">
                           <Check className="h-3 w-3 text-green-400" />
                           <span>Integração WhatsApp</span>
                         </div>
                       )}
                       {plans.find(p => p.plan_id === subscriptionPlan)?.multi_usuarios && (
-                        <div className="flex items-center gap-2 text-xs text-purple-200">
+                        <div className="flex items-center gap-2 text-xs text-blue-200">
                           <Check className="h-3 w-3 text-green-400" />
                           <span>Múltiplos Usuários</span>
                         </div>
                       )}
                       {plans.find(p => p.plan_id === subscriptionPlan)?.personalizacao_agente && (
-                        <div className="flex items-center gap-2 text-xs text-purple-200">
+                        <div className="flex items-center gap-2 text-xs text-blue-200">
                           <Check className="h-3 w-3 text-green-400" />
                           <span>Personalização do Agente</span>
                         </div>
                       )}
                       {plans.find(p => p.plan_id === subscriptionPlan)?.analytics && (
-                        <div className="flex items-center gap-2 text-xs text-purple-200">
+                        <div className="flex items-center gap-2 text-xs text-blue-200">
                           <Check className="h-3 w-3 text-green-400" />
                           <span>Analytics</span>
                         </div>
@@ -777,11 +805,11 @@ export default function OrganizationForm() {
                     </div>
                     
                     {/* Limites do Plano */}
-                    <div className="mt-3 pt-3 border-t border-purple-800/30">
-                      <p className="text-xs font-semibold text-purple-300 uppercase tracking-wide mb-2">
+                    <div className="mt-3 pt-3 border-t border-blue-800/30">
+                      <p className="text-xs font-semibold text-blue-300 uppercase tracking-wide mb-2">
                         Limites:
                       </p>
-                      <div className="grid grid-cols-2 gap-2 text-xs text-purple-300">
+                      <div className="grid grid-cols-2 gap-2 text-xs text-blue-300">
                         <div>
                           <span className="font-medium">Agendamentos/mês:</span>{' '}
                           {plans.find(p => p.plan_id === subscriptionPlan)?.max_agendamentos_mes || 'Ilimitado'}
@@ -807,10 +835,10 @@ export default function OrganizationForm() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="is_active" className="text-purple-200">
+                <Label htmlFor="is_active" className="text-blue-200">
                   Organização Ativa
                 </Label>
-                <p className="text-xs text-purple-400">
+                <p className="text-xs text-blue-400">
                   Organizações inativas não podem acessar o sistema
                 </p>
               </div>
@@ -825,10 +853,10 @@ export default function OrganizationForm() {
 
         {/* Logo Upload (only when editing) */}
         {isEditing && (
-          <Card className="border-purple-800/30 bg-slate-900/40 backdrop-blur-xl">
+          <Card className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl">
             <CardHeader>
-              <CardTitle className="text-purple-100">Logo da Organização</CardTitle>
-              <CardDescription className="text-purple-400">
+              <CardTitle className="text-blue-100">Logo da Organização</CardTitle>
+              <CardDescription className="text-blue-400">
                 Faça upload do logo que aparecerá no sistema da organização
               </CardDescription>
             </CardHeader>
@@ -840,7 +868,7 @@ export default function OrganizationForm() {
                     <img
                       src={logoPreview || currentLogoUrl || ''}
                       alt="Logo"
-                      className="h-20 w-20 object-contain rounded-lg border border-purple-600/30 bg-slate-800/40 p-2"
+                      className="h-20 w-20 object-contain rounded-lg border border-blue-600/30 bg-slate-800/40 p-2"
                     />
                     {logoPreview && (
                       <button
@@ -853,10 +881,10 @@ export default function OrganizationForm() {
                     )}
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm text-purple-200">
+                    <p className="text-sm text-blue-200">
                       {logoPreview ? 'Novo logo (não salvo)' : 'Logo atual'}
                     </p>
-                    <p className="text-xs text-purple-400">
+                    <p className="text-xs text-blue-400">
                       {logoPreview
                         ? 'Clique em "Atualizar" para salvar'
                         : 'Faça upload de uma nova imagem para substituir'}
@@ -867,16 +895,16 @@ export default function OrganizationForm() {
 
               {/* Input de upload */}
               <div>
-                <Label htmlFor="logo" className="text-purple-200">
+                <Label htmlFor="logo" className="text-blue-200">
                   {currentLogoUrl ? 'Alterar Logo' : 'Adicionar Logo'}
                 </Label>
                 <div className="mt-2">
                   <label
                     htmlFor="logo"
-                    className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-purple-600/30 bg-slate-800/40 px-4 py-8 text-center transition-colors hover:border-purple-600/50 hover:bg-slate-800/60"
+                    className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-blue-600/30 bg-slate-800/40 px-4 py-8 text-center transition-colors hover:border-blue-600/50 hover:bg-slate-800/60"
                   >
-                    <Upload className="h-5 w-5 text-purple-400" />
-                    <span className="text-sm text-purple-300">
+                    <Upload className="h-5 w-5 text-blue-400" />
+                    <span className="text-sm text-blue-300">
                       Clique para fazer upload ou arraste uma imagem
                     </span>
                   </label>
@@ -888,7 +916,7 @@ export default function OrganizationForm() {
                     className="hidden"
                   />
                 </div>
-                <p className="text-xs text-purple-400 mt-2">
+                <p className="text-xs text-blue-400 mt-2">
                   PNG, JPG ou SVG. Máximo 2MB. Recomendado: 200x200px
                 </p>
               </div>
@@ -898,16 +926,16 @@ export default function OrganizationForm() {
 
         {/* Admin Info (only when creating) */}
         {!isEditing && (
-          <Card className="border-purple-800/30 bg-slate-900/40 backdrop-blur-xl">
+          <Card className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl">
             <CardHeader>
-              <CardTitle className="text-purple-100">Administrador da Organização</CardTitle>
-              <CardDescription className="text-purple-400">
+              <CardTitle className="text-blue-100">Administrador da Organização</CardTitle>
+              <CardDescription className="text-blue-400">
                 Criar usuário admin para gerenciar a clínica
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="adminFullName" className="text-purple-200">
+                <Label htmlFor="adminFullName" className="text-blue-200">
                   Nome Completo *
                 </Label>
                 <Input
@@ -916,7 +944,7 @@ export default function OrganizationForm() {
                     required: !isEditing && "Nome completo é obrigatório",
                   })}
                   placeholder="Ex: Dr. João Silva"
-                  className="mt-1.5 bg-slate-800/40 border-purple-800/30 text-purple-100 placeholder:text-purple-400/50"
+                  className="mt-1.5 bg-slate-800/40 border-blue-800/30 text-blue-100 placeholder:text-blue-400/50"
                 />
                 {errors.adminFullName && (
                   <p className="text-xs text-red-400 mt-1">
@@ -926,7 +954,7 @@ export default function OrganizationForm() {
               </div>
 
               <div>
-                <Label htmlFor="adminEmail" className="text-purple-200">
+                <Label htmlFor="adminEmail" className="text-blue-200">
                   Email *
                 </Label>
                 <Input
@@ -936,7 +964,7 @@ export default function OrganizationForm() {
                     required: !isEditing && "Email é obrigatório",
                   })}
                   placeholder="admin@clinica.com"
-                  className="mt-1.5 bg-slate-800/40 border-purple-800/30 text-purple-100 placeholder:text-purple-400/50"
+                  className="mt-1.5 bg-slate-800/40 border-blue-800/30 text-blue-100 placeholder:text-blue-400/50"
                 />
                 {errors.adminEmail && (
                   <p className="text-xs text-red-400 mt-1">{errors.adminEmail.message}</p>
@@ -944,7 +972,7 @@ export default function OrganizationForm() {
               </div>
 
               <div>
-                <Label htmlFor="adminPassword" className="text-purple-200">
+                <Label htmlFor="adminPassword" className="text-blue-200">
                   Senha *
                 </Label>
                 <Input
@@ -958,7 +986,7 @@ export default function OrganizationForm() {
                     },
                   })}
                   placeholder="Mínimo 6 caracteres"
-                  className="mt-1.5 bg-slate-800/40 border-purple-800/30 text-purple-100 placeholder:text-purple-400/50"
+                  className="mt-1.5 bg-slate-800/40 border-blue-800/30 text-blue-100 placeholder:text-blue-400/50"
                 />
                 {errors.adminPassword && (
                   <p className="text-xs text-red-400 mt-1">
@@ -972,10 +1000,10 @@ export default function OrganizationForm() {
 
         {/* Workflow Section (only when editing) */}
         {isEditing && (
-          <Card className="border-purple-800/30 bg-slate-900/40 backdrop-blur-xl">
+          <Card className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl">
             <CardHeader>
-              <CardTitle className="text-purple-100">Automações e Workflows</CardTitle>
-              <CardDescription className="text-purple-400">
+              <CardTitle className="text-blue-100">Automações e Workflows</CardTitle>
+              <CardDescription className="text-blue-400">
                 Configure fluxos de trabalho automatizados para esta organização
               </CardDescription>
             </CardHeader>
@@ -1004,27 +1032,27 @@ export default function OrganizationForm() {
 
         {/* WhatsApp Instance Info (only when editing) */}
         {isEditing && (
-          <Card className="border-purple-800/30 bg-slate-900/40 backdrop-blur-xl">
+          <Card className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl">
             <CardHeader>
-              <CardTitle className="text-purple-100 flex items-center gap-2">
+              <CardTitle className="text-blue-100 flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-green-400" />
                 Instância WhatsApp
               </CardTitle>
-              <CardDescription className="text-purple-400">
+              <CardDescription className="text-blue-400">
                 Informações de conexão do WhatsApp desta organização
               </CardDescription>
             </CardHeader>
             <CardContent>
               {isLoadingWhatsapp ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
-                  <span className="ml-2 text-purple-300">Carregando...</span>
+                  <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+                  <span className="ml-2 text-blue-300">Carregando...</span>
                 </div>
               ) : whatsappInstance ? (
                 <div className="space-y-4">
                   {/* Status Badge */}
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-purple-300">Status:</span>
+                    <span className="text-sm text-blue-300">Status:</span>
                     {whatsappInstance.status === 'connected' ? (
                       <span className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/30 rounded-full text-green-400 text-sm font-medium">
                         <Check className="h-4 w-4" />
@@ -1045,37 +1073,37 @@ export default function OrganizationForm() {
 
                   {/* Instance Details */}
                   <div className="grid gap-3">
-                    <div className="flex items-center justify-between border-b border-purple-800/30 pb-2">
-                      <span className="text-sm text-purple-400">Nome da Instância:</span>
-                      <span className="text-sm font-mono text-purple-100">{whatsappInstance.instance_name}</span>
+                    <div className="flex items-center justify-between border-b border-blue-800/30 pb-2">
+                      <span className="text-sm text-blue-400">Nome da Instância:</span>
+                      <span className="text-sm font-mono text-blue-100">{whatsappInstance.instance_name}</span>
                     </div>
-                    <div className="flex items-center justify-between border-b border-purple-800/30 pb-2">
-                      <span className="text-sm text-purple-400">Empresa:</span>
-                      <span className="text-sm text-purple-100">{whatsappInstance.admin_field_01}</span>
+                    <div className="flex items-center justify-between border-b border-blue-800/30 pb-2">
+                      <span className="text-sm text-blue-400">Empresa:</span>
+                      <span className="text-sm text-blue-100">{whatsappInstance.admin_field_01}</span>
                     </div>
-                    <div className="flex items-center justify-between border-b border-purple-800/30 pb-2">
-                      <span className="text-sm text-purple-400">Telefone:</span>
-                      <span className="text-sm font-mono text-purple-100">{whatsappInstance.phone}</span>
+                    <div className="flex items-center justify-between border-b border-blue-800/30 pb-2">
+                      <span className="text-sm text-blue-400">Telefone:</span>
+                      <span className="text-sm font-mono text-blue-100">{whatsappInstance.phone}</span>
                     </div>
-                    <div className="flex items-center justify-between border-b border-purple-800/30 pb-2">
-                      <span className="text-sm text-purple-400">Instance ID:</span>
-                      <span className="text-xs font-mono text-purple-300">{whatsappInstance.instance_id}</span>
+                    <div className="flex items-center justify-between border-b border-blue-800/30 pb-2">
+                      <span className="text-sm text-blue-400">Instance ID:</span>
+                      <span className="text-xs font-mono text-blue-300">{whatsappInstance.instance_id}</span>
                     </div>
-                    <div className="flex items-center justify-between border-b border-purple-800/30 pb-2">
-                      <span className="text-sm text-purple-400">Token:</span>
-                      <span className="text-xs font-mono text-purple-300 break-all">
+                    <div className="flex items-center justify-between border-b border-blue-800/30 pb-2">
+                      <span className="text-sm text-blue-400">Token:</span>
+                      <span className="text-xs font-mono text-blue-300 break-all">
                         {whatsappInstance.token}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between border-b border-purple-800/30 pb-2">
-                      <span className="text-sm text-purple-400">Criado em:</span>
-                      <span className="text-sm text-purple-100">
+                    <div className="flex items-center justify-between border-b border-blue-800/30 pb-2">
+                      <span className="text-sm text-blue-400">Criado em:</span>
+                      <span className="text-sm text-blue-100">
                         {new Date(whatsappInstance.created_at).toLocaleString('pt-BR')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-purple-400">Atualizado em:</span>
-                      <span className="text-sm text-purple-100">
+                      <span className="text-sm text-blue-400">Atualizado em:</span>
+                      <span className="text-sm text-blue-100">
                         {new Date(whatsappInstance.updated_at).toLocaleString('pt-BR')}
                       </span>
                     </div>
@@ -1083,15 +1111,15 @@ export default function OrganizationForm() {
 
                   {/* Webhook Info */}
                   {whatsappInstance.webhook_url && (
-                    <div className="mt-4 p-4 bg-purple-900/20 border border-purple-700/30 rounded-lg space-y-3">
-                      <h4 className="text-sm font-semibold text-purple-200 flex items-center gap-2">
+                    <div className="mt-4 p-4 bg-blue-900/20 border border-blue-700/30 rounded-lg space-y-3">
+                      <h4 className="text-sm font-semibold text-blue-200 flex items-center gap-2">
                         <Workflow className="h-4 w-4" />
                         Webhook Configurado
                       </h4>
                       <div className="space-y-2">
-                        <span className="text-xs text-purple-400 block">URL do Webhook:</span>
-                        <div className="bg-slate-900/60 rounded p-2 border border-purple-800/30">
-                          <p className="text-xs font-mono text-purple-100 break-all">
+                        <span className="text-xs text-blue-400 block">URL do Webhook:</span>
+                        <div className="bg-slate-900/60 rounded p-2 border border-blue-800/30">
+                          <p className="text-xs font-mono text-blue-100 break-all">
                             {whatsappInstance.webhook_url}
                           </p>
                         </div>
@@ -1104,12 +1132,12 @@ export default function OrganizationForm() {
                   )}
 
                   {/* Botão Configurar Webhook */}
-                  <div className="pt-4 border-t border-purple-800/30">
+                  <div className="pt-4 border-t border-blue-800/30">
                     <Button
                       type="button"
                       onClick={handleConfigureWebhook}
                       disabled={isConfiguringWebhook}
-                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                      className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
                     >
                       {isConfiguringWebhook ? (
                         <>
@@ -1127,11 +1155,11 @@ export default function OrganizationForm() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <MessageSquare className="h-12 w-12 text-purple-600 mx-auto mb-3" />
-                  <p className="text-purple-300 text-sm">
+                  <MessageSquare className="h-12 w-12 text-blue-600 mx-auto mb-3" />
+                  <p className="text-blue-300 text-sm">
                     Nenhuma instância WhatsApp conectada
                   </p>
-                  <p className="text-purple-500 text-xs mt-1">
+                  <p className="text-blue-500 text-xs mt-1">
                     O cliente ainda não conectou o WhatsApp
                   </p>
                 </div>
@@ -1142,22 +1170,22 @@ export default function OrganizationForm() {
 
         {/* Usuários da Organização (only when editing) */}
         {isEditing && (
-          <Card className="border-purple-800/30 bg-slate-900/40 backdrop-blur-xl">
+          <Card className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-purple-100 flex items-center gap-2">
-                    <Users className="h-5 w-5 text-purple-400" />
+                  <CardTitle className="text-blue-100 flex items-center gap-2">
+                    <Users className="h-5 w-5 text-blue-400" />
                     Usuários da Organização
                   </CardTitle>
-                  <CardDescription className="text-purple-400">
+                  <CardDescription className="text-blue-400">
                     Gerencie os usuários que têm acesso a esta organização
                   </CardDescription>
                 </div>
                 <Button
                   type="button"
                   onClick={() => setIsAddUserModalOpen(true)}
-                  className="bg-purple-600 hover:bg-purple-700"
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
                   Adicionar Usuário
@@ -1167,11 +1195,11 @@ export default function OrganizationForm() {
             <CardContent>
               {orgUsers.length === 0 ? (
                 <div className="text-center py-8">
-                  <Users className="h-12 w-12 text-purple-600 mx-auto mb-3" />
-                  <p className="text-purple-300 text-sm">
+                  <Users className="h-12 w-12 text-blue-600 mx-auto mb-3" />
+                  <p className="text-blue-300 text-sm">
                     Nenhum usuário cadastrado
                   </p>
-                  <p className="text-purple-500 text-xs mt-1">
+                  <p className="text-blue-500 text-xs mt-1">
                     Adicione usuários para que possam acessar o sistema
                   </p>
                 </div>
@@ -1180,24 +1208,24 @@ export default function OrganizationForm() {
                   {orgUsers.map((user) => (
                     <div
                       key={user.id}
-                      className="flex items-center justify-between p-4 bg-slate-800/40 border border-purple-800/30 rounded-lg"
+                      className="flex items-center justify-between p-4 bg-slate-800/40 border border-blue-800/30 rounded-lg"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-600/20">
-                          <span className="font-semibold text-purple-300">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600/20">
+                          <span className="font-semibold text-blue-300">
                             {user.full_name?.charAt(0).toUpperCase() || 'U'}
                           </span>
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-purple-100">
+                          <p className="text-sm font-semibold text-blue-100">
                             {user.full_name}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-purple-400 capitalize">
+                            <span className="text-xs text-blue-400 capitalize">
                               {user.role === 'admin' ? 'Administrador' : 
                                user.role === 'doctor' ? 'Médico' : 'Assistente'}
                             </span>
-                            <span className="text-purple-600">•</span>
+                            <span className="text-blue-600">•</span>
                             <span className={`text-xs ${user.is_active ? 'text-green-400' : 'text-red-400'}`}>
                               {user.is_active ? 'Ativo' : 'Inativo'}
                             </span>
@@ -1227,14 +1255,14 @@ export default function OrganizationForm() {
             type="button"
             variant="outline"
             onClick={() => navigate("/super-admin/organizations")}
-            className="border-purple-600/30 text-purple-300 hover:bg-purple-800/30 hover:text-purple-100"
+            className="border-blue-600/30 text-blue-300 hover:bg-blue-800/30 hover:text-blue-100"
           >
             Cancelar
           </Button>
           <Button
             type="submit"
             disabled={saveMutation.isPending || uploadingLogo}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
           >
             <Save className="mr-2 h-4 w-4" />
             {uploadingLogo

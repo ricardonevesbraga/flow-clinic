@@ -63,9 +63,9 @@ export default function Plans() {
   const getPlanColor = (planId: string) => {
     switch (planId) {
       case 'plano_a': return 'border-blue-500/30 bg-blue-500/5';
-      case 'plano_b': return 'border-purple-500/30 bg-purple-500/5';
-      case 'plano_c': return 'border-amber-500/30 bg-amber-500/5';
-      case 'plano_d': return 'border-emerald-500/30 bg-emerald-500/5';
+      case 'plano_b': return 'border-indigo-500/30 bg-indigo-500/5';
+      case 'plano_c': return 'border-cyan-500/30 bg-cyan-500/5';
+      case 'plano_d': return 'border-teal-500/30 bg-teal-500/5';
       default: return 'border-gray-500/30 bg-gray-500/5';
     }
   };
@@ -73,9 +73,9 @@ export default function Plans() {
   const getCrownColor = (planId: string) => {
     switch (planId) {
       case 'plano_a': return 'text-blue-500';
-      case 'plano_b': return 'text-purple-500';
-      case 'plano_c': return 'text-amber-500';
-      case 'plano_d': return 'text-emerald-500';
+      case 'plano_b': return 'text-indigo-500';
+      case 'plano_c': return 'text-cyan-500';
+      case 'plano_d': return 'text-teal-500';
       default: return 'text-gray-500';
     }
   };
@@ -83,7 +83,7 @@ export default function Plans() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
@@ -92,8 +92,8 @@ export default function Plans() {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-purple-100">Planos de Assinatura</h1>
-        <p className="text-purple-400 mt-1">
+        <h1 className="text-3xl font-bold text-blue-100">Planos de Assinatura</h1>
+        <p className="text-blue-400 mt-1">
           Visualize os planos disponíveis e seus recursos
         </p>
       </div>
@@ -112,8 +112,8 @@ export default function Plans() {
               <div className="flex items-center gap-3">
                 <Crown className={cn("h-6 w-6", getCrownColor(plan.plan_id))} />
                 <div>
-                  <CardTitle className="text-purple-100">{plan.plan_name}</CardTitle>
-                  <CardDescription className="text-purple-400 mt-1">
+                  <CardTitle className="text-blue-100">{plan.plan_name}</CardTitle>
+                  <CardDescription className="text-blue-400 mt-1">
                     {plan.plan_description}
                   </CardDescription>
                 </div>
@@ -123,13 +123,13 @@ export default function Plans() {
               <div className="mt-4">
                 {plan.price_monthly ? (
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-purple-100">
+                    <span className="text-3xl font-bold text-blue-100">
                       R$ {plan.price_monthly.toFixed(2)}
                     </span>
-                    <span className="text-purple-400">/mês</span>
+                    <span className="text-blue-400">/mês</span>
                   </div>
                 ) : (
-                  <span className="text-lg font-semibold text-purple-300">
+                  <span className="text-lg font-semibold text-blue-300">
                     Sob consulta
                   </span>
                 )}
@@ -139,7 +139,7 @@ export default function Plans() {
             <CardContent className="space-y-6">
               {/* Recursos Principais */}
               <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-purple-200 uppercase tracking-wide">
+                <h3 className="text-sm font-semibold text-blue-200 uppercase tracking-wide">
                   Recursos Principais
                 </h3>
                 <div className="space-y-2">
@@ -161,13 +161,13 @@ export default function Plans() {
                         <div>
                           <p className={cn(
                             "text-sm font-medium",
-                            isEnabled ? "text-purple-100" : "text-purple-400/50"
+                            isEnabled ? "text-blue-100" : "text-blue-400/50"
                           )}>
                             {feature.label}
                           </p>
                           <p className={cn(
                             "text-xs",
-                            isEnabled ? "text-purple-300" : "text-purple-500/50"
+                            isEnabled ? "text-blue-300" : "text-blue-500/50"
                           )}>
                             {feature.description}
                           </p>
@@ -180,7 +180,7 @@ export default function Plans() {
 
               {/* Recursos Secundários */}
               <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-purple-200 uppercase tracking-wide">
+                <h3 className="text-sm font-semibold text-blue-200 uppercase tracking-wide">
                   Outros Recursos
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
@@ -198,7 +198,7 @@ export default function Plans() {
                         )}
                         <span className={cn(
                           "text-xs",
-                          isEnabled ? "text-purple-200" : "text-purple-500/50"
+                          isEnabled ? "text-blue-200" : "text-blue-500/50"
                         )}>
                           {feature.label}
                         </span>
@@ -209,34 +209,34 @@ export default function Plans() {
               </div>
 
               {/* Limites */}
-              <div className="space-y-3 pt-3 border-t border-purple-800/30">
-                <h3 className="text-sm font-semibold text-purple-200 uppercase tracking-wide">
+              <div className="space-y-3 pt-3 border-t border-blue-800/30">
+                <h3 className="text-sm font-semibold text-blue-200 uppercase tracking-wide">
                   Limites
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="text-center p-3 rounded-lg bg-slate-800/30">
-                    <p className="text-2xl font-bold text-purple-100">
+                    <p className="text-2xl font-bold text-blue-100">
                       {plan.max_agendamentos_mes || '∞'}
                     </p>
-                    <p className="text-xs text-purple-400">Agendamentos/mês</p>
+                    <p className="text-xs text-blue-400">Agendamentos/mês</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-slate-800/30">
-                    <p className="text-2xl font-bold text-purple-100">
+                    <p className="text-2xl font-bold text-blue-100">
                       {plan.max_mensagens_whatsapp_mes || '∞'}
                     </p>
-                    <p className="text-xs text-purple-400">Mensagens/mês</p>
+                    <p className="text-xs text-blue-400">Mensagens/mês</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-slate-800/30">
-                    <p className="text-2xl font-bold text-purple-100">
+                    <p className="text-2xl font-bold text-blue-100">
                       {plan.max_usuarios || '∞'}
                     </p>
-                    <p className="text-xs text-purple-400">Usuários</p>
+                    <p className="text-xs text-blue-400">Usuários</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-slate-800/30">
-                    <p className="text-2xl font-bold text-purple-100">
+                    <p className="text-2xl font-bold text-blue-100">
                       {plan.max_pacientes || '∞'}
                     </p>
-                    <p className="text-xs text-purple-400">Pacientes</p>
+                    <p className="text-xs text-blue-400">Pacientes</p>
                   </div>
                 </div>
               </div>
@@ -246,15 +246,15 @@ export default function Plans() {
       </div>
 
       {/* Info Alert */}
-      <Card className="border-purple-500/30 bg-purple-500/5">
+      <Card className="border-blue-500/30 bg-blue-500/5">
         <CardContent className="pt-6">
           <div className="flex gap-3">
-            <AlertCircle className="h-5 w-5 text-purple-400 shrink-0" />
+            <AlertCircle className="h-5 w-5 text-blue-400 shrink-0" />
             <div className="space-y-1">
-              <p className="text-sm font-semibold text-purple-200">
+              <p className="text-sm font-semibold text-blue-200">
                 Sobre os Planos
               </p>
-              <p className="text-xs text-purple-300">
+              <p className="text-xs text-blue-300">
                 Os recursos de cada plano são fixos. Para alterar o plano de uma organização, 
                 acesse a página de edição da organização em "Organizações".
               </p>

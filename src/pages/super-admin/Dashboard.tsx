@@ -71,7 +71,7 @@ export default function SuperAdminDashboard() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
       </div>
     );
   }
@@ -82,28 +82,28 @@ export default function SuperAdminDashboard() {
       value: stats?.totalOrganizations || 0,
       description: `${stats?.activeOrganizations || 0} ativas`,
       icon: Building2,
-      color: "from-purple-500 to-pink-500",
+      color: "from-blue-500 to-cyan-500",
     },
     {
       title: "Total de Usuários",
       value: stats?.totalUsers || 0,
       description: "Usuários cadastrados",
       icon: Users,
-      color: "from-blue-500 to-cyan-500",
+      color: "from-indigo-500 to-blue-500",
     },
     {
       title: "Total de Pacientes",
       value: stats?.totalPatients || 0,
       description: "Em todas as organizações",
       icon: Activity,
-      color: "from-green-500 to-emerald-500",
+      color: "from-teal-500 to-cyan-500",
     },
     {
       title: "Total de Compromissos",
       value: stats?.totalAppointments || 0,
       description: "Agendamentos totais",
       icon: TrendingUp,
-      color: "from-orange-500 to-red-500",
+      color: "from-blue-600 to-indigo-600",
     },
   ];
 
@@ -111,9 +111,9 @@ export default function SuperAdminDashboard() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-purple-100">Dashboard</h1>
-        <p className="text-purple-400 mt-1">
-          Visão geral do sistema LuxClinic
+        <h1 className="text-3xl font-bold text-blue-100">Dashboard</h1>
+        <p className="text-blue-400 mt-1">
+          Visão geral do sistema
         </p>
       </div>
 
@@ -124,10 +124,10 @@ export default function SuperAdminDashboard() {
           return (
             <Card
               key={kpi.title}
-              className="border-purple-800/30 bg-slate-900/40 backdrop-blur-xl"
+              className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl"
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-purple-100">
+                <CardTitle className="text-sm font-medium text-blue-100">
                   {kpi.title}
                 </CardTitle>
                 <div
@@ -137,10 +137,10 @@ export default function SuperAdminDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-purple-50">
+                <div className="text-2xl font-bold text-blue-50">
                   {kpi.value}
                 </div>
-                <p className="text-xs text-purple-400 mt-1">{kpi.description}</p>
+                <p className="text-xs text-blue-400 mt-1">{kpi.description}</p>
               </CardContent>
             </Card>
           );
@@ -148,12 +148,12 @@ export default function SuperAdminDashboard() {
       </div>
 
       {/* Recent Organizations */}
-      <Card className="border-purple-800/30 bg-slate-900/40 backdrop-blur-xl">
+      <Card className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl">
         <CardHeader>
-          <CardTitle className="text-purple-100">
+          <CardTitle className="text-blue-100">
             Organizações Recentes
           </CardTitle>
-          <CardDescription className="text-purple-400">
+          <CardDescription className="text-blue-400">
             Últimas organizações cadastradas no sistema
           </CardDescription>
         </CardHeader>
@@ -162,15 +162,15 @@ export default function SuperAdminDashboard() {
             {recentOrgs?.map((org) => (
               <div
                 key={org.id}
-                className="flex items-center justify-between rounded-lg border border-purple-800/30 bg-slate-800/40 p-4"
+                className="flex items-center justify-between rounded-lg border border-blue-800/30 bg-slate-800/40 p-4"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-500">
                     <Building2 className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <p className="font-medium text-purple-100">{org.name}</p>
-                    <p className="text-xs text-purple-400">{org.slug}</p>
+                    <p className="font-medium text-blue-100">{org.name}</p>
+                    <p className="text-xs text-blue-400">{org.slug}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -183,14 +183,14 @@ export default function SuperAdminDashboard() {
                   >
                     {org.is_active ? "Ativa" : "Inativa"}
                   </span>
-                  <p className="text-xs text-purple-400 mt-1">
+                  <p className="text-xs text-blue-400 mt-1">
                     {new Date(org.created_at).toLocaleDateString("pt-BR")}
                   </p>
                 </div>
               </div>
             ))}
             {(!recentOrgs || recentOrgs.length === 0) && (
-              <p className="text-center text-purple-400 py-8">
+              <p className="text-center text-blue-400 py-8">
                 Nenhuma organização cadastrada ainda
               </p>
             )}
