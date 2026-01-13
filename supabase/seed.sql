@@ -3,7 +3,7 @@
 
 -- Inserir configurações
 INSERT INTO settings (clinic_name, doctor_name, subscription_plan, subscription_renews_at)
-VALUES ('LuxClinic', 'Dr. Silva', 'premium', '2024-02-15T00:00:00Z')
+VALUES ('FlowClinic', 'Dr. Silva', 'premium', '2024-02-15T00:00:00Z')
 ON CONFLICT DO NOTHING;
 
 -- Inserir pacientes

@@ -3,7 +3,6 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "./useAuth";
 
 // Função para converter slug da organização para nome da tabela de chats
-// Ex: clinica-labz-1765697059170 → clinica_labz_chats
 function slugToChatsTable(slug: string): string {
   // Remover o número do final (timestamp)
   const parts = slug.split('-');

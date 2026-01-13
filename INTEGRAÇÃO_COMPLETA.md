@@ -2,7 +2,7 @@
 
 ## 🎉 Status: INTEGRADO E FUNCIONAL
 
-Todo o sistema LuxClinic está agora conectado ao Supabase e usando dados reais do banco de dados!
+Todo o sistema FlowClinic está agora conectado ao Supabase e usando dados reais do banco de dados!
 
 ## 📊 O Que Foi Integrado
 
@@ -256,5 +256,5 @@ console.log({ data, error, isLoading });
 
 Todos os dados são reais, vindos do Supabase. As três páginas principais (Dashboard, Agenda, CRM) estão 100% conectadas ao banco de dados com hooks personalizados, loading states, tratamento de erros e TypeScript completo.
 
-**Parabéns! Seu sistema LuxClinic agora tem um backend real! 🚀**
+**Parabéns! Seu sistema FlowClinic agora tem um backend real! 🚀**
 

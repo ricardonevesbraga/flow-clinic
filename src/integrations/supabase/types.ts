@@ -244,7 +244,7 @@ export type Database = {
         }
         Relationships: []
       }
-      clinica_labz_chats: {
+      clinica_flowgrammers_chats: {
         Row: {
           data: string | null
           id: number
@@ -265,7 +265,7 @@ export type Database = {
         }
         Relationships: []
       }
-      clinica_mente_feliz_chats: {
+      clinica_teste_chats: {
         Row: {
           data: string | null
           id: number

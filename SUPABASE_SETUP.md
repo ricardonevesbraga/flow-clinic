@@ -1,4 +1,4 @@
-# 🗄️ Setup do Supabase - LuxClinic
+# 🗄️ Setup do Supabase - FlowClinic
 
 ## ✅ Configuração Concluída
 

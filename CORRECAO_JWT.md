@@ -26,7 +26,7 @@
 
 ```bash
 # 1. Certifique-se de estar no diretório do projeto
-cd "/Users/ricneves/Downloads/clinica - flowgrammers/luxclinic-concierge"
+cd "/Users/ricneves/Downloads/clinica - flowgrammers/flowclinic"
 
 # 2. Fazer deploy da função (isso aplica o config.toml também)
 supabase functions deploy create-organization

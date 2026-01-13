@@ -38,7 +38,7 @@ CREATE INDEX idx_profiles_super_admin ON profiles(is_super_admin) WHERE is_super
 #### 1.2 Criar super admin inicial
 ```sql
 -- Será criado via migration após primeiro cadastro
--- Email: admin@luxclinic.com (você define)
+-- Email: admin@fluclinic.com (você define)
 ```
 
 #### 1.3 RLS para Super Admin
@@ -123,7 +123,7 @@ USING (
 #### 2.4 Layout Super Admin
 
 Layout completamente diferente:
-- Sidebar com logo "LuxClinic Admin"
+- Sidebar com logo "FlowClinic Admin"
 - Menu: Dashboard, Organizações, Analytics, Configurações
 - Header: Badge "Super Admin" + logout
 - Tema diferenciado (ex: roxo/vermelho)

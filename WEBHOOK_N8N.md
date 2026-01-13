@@ -162,7 +162,7 @@ Edite `src/pages/Agenda.tsx` na função `handleCreateAppointment`:
 const webhookData = {
   // ... campos existentes ...
   custom_field: "seu valor",
-  clinic_name: "LuxClinic",
+  clinic_name: "FlowClinic",
   doctor_name: "Dr. Silva"
 };
 ```

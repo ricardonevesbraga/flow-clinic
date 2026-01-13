@@ -2,7 +2,7 @@
 
 ## 📋 Resumo
 
-O sistema LuxClinic Concierge agora é **multi-tenant**, permitindo múltiplas organizações (clínicas) com dados completamente isolados entre si.
+O sistema FlowClinic agora é **multi-tenant**, permitindo múltiplas organizações (clínicas) com dados completamente isolados entre si.
 
 ---
 

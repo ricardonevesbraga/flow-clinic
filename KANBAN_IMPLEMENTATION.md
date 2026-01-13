@@ -1,4 +1,4 @@
-# 📊 Implementação do Kanban - LuxClinic
+# 📊 Implementação do Kanban - FlowClinic
 
 ## ✅ Resumo da Implementação
 

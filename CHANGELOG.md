@@ -1,4 +1,4 @@
-# Changelog - LuxClinic
+# Changelog - FlowClinic
 
 ## [2.0.0] - Otimização Mobile & Tema - 2024
 
@@ -155,7 +155,7 @@ Accent:     hsl(45 65% 58%)  - Dourado brilhante
 
 ### 🙏 Notas
 
-Esta versão representa uma reformulação completa da experiência mobile e a adição do sistema de tema escuro/claro, tornando o LuxClinic totalmente funcional e otimizado para todos os tipos de dispositivos.
+Esta versão representa uma reformulação completa da experiência mobile e a adição do sistema de tema escuro/claro, tornando o FlowClinic totalmente funcional e otimizado para todos os tipos de dispositivos.
 
 ---
 

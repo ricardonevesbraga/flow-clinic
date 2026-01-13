@@ -1,4 +1,4 @@
-# Guia de Otimização Mobile - LuxClinic
+# Guia de Otimização Mobile - FlowClinic
 
 Este documento detalha todas as otimizações implementadas para garantir uma experiência mobile perfeita.
 
