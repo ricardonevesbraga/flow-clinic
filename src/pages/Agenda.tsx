@@ -601,6 +601,34 @@ export default function Agenda() {
       return;
     }
 
+    // Validar se já existe compromisso na mesma data e hora
+    const hasConflict = allAppointments.some(apt => {
+      if (!apt.start_datetime || !apt.end_datetime) return false;
+      
+      const existingStart = new Date(apt.start_datetime);
+      const existingEnd = new Date(apt.end_datetime);
+      const newStart = startDateTime;
+      const newEnd = endDateTime;
+      
+      // Verificar sobreposição de horários
+      // Há conflito se:
+      // 1. O novo início está dentro do horário existente
+      // 2. O novo fim está dentro do horário existente
+      // 3. O novo horário engloba completamente o existente
+      const hasOverlap = (
+        (newStart >= existingStart && newStart < existingEnd) ||
+        (newEnd > existingStart && newEnd <= existingEnd) ||
+        (newStart <= existingStart && newEnd >= existingEnd)
+      );
+      
+      return hasOverlap;
+    });
+
+    if (hasConflict) {
+      toast.error("Já existe um compromisso agendado neste horário. Por favor, escolha outro horário.");
+      return;
+    }
+
     try {
       // Converter para ISO8601 - duas versões:
       // 1. Para o banco (ajustado -3h para armazenar literal)
