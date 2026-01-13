@@ -433,7 +433,7 @@ export default function Conhecimento() {
             </div>
             <div>
               <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
-                Conhecimento do Agent
+                Conhecimento do Assistente Virtual
               </h1>
             </div>
           </div>

@@ -468,7 +468,7 @@ export default function Dashboard() {
               <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
                 <Activity className="h-5 w-5 md:h-6 md:w-6 text-accent" />
               </div>
-              <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Configurar Agent</h3>
+              <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Configurar Assistente Virtual</h3>
               <p className="text-sm text-muted-foreground">Ajuste seu atendimento IA</p>
             </button>
           </>

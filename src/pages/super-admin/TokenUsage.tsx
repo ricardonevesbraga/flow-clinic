@@ -147,7 +147,7 @@ export default function TokenUsage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-blue-100">Gastos de Token</h1>
+        <h1 className="text-3xl font-bold text-blue-100">Observabilidade - Gastos de Token</h1>
         <p className="text-blue-400 mt-1">
           Consumo de tokens e custos por organização
         </p>

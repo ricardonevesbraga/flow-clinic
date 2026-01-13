@@ -345,7 +345,7 @@ export default function Agenda() {
       console.log(`📤 Enviando ${eventsToSync.length} eventos para conferência...`);
 
       // Enviar para webhook de conferência
-      const response = await fetch('https://webhook.u4digital.com.br/webhook/labz-conferir-agenda', {
+      const response = await fetch(`${import.meta.env.VITE_N8N_WEBHOOK_URL}conferir-agenda`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -369,23 +369,9 @@ export default function Agenda() {
     }
   };
 
-  // Função para atualizar dados
-  const handleRefresh = async () => {
-    toast.loading("Atualizando agenda...", { id: "refresh" });
-    try {
-      // 1. Recarregar dados do banco
-      await Promise.all([
-        refetch(),
-        queryClient.invalidateQueries({ queryKey: ['patients'] })
-      ]);
-      
-      // 2. Sincronizar com webhook (não bloqueia)
-      syncAgendaWithWebhook();
-      
-      toast.success("Agenda atualizada!", { id: "refresh" });
-    } catch (error) {
-      toast.error("Erro ao atualizar", { id: "refresh" });
-    }
+  // Função para atualizar dados - apenas recarrega a página
+  const handleRefresh = () => {
+    window.location.reload();
   };
 
   // Funções de navegação
@@ -666,6 +652,7 @@ export default function Agenda() {
         
         const webhookData = {
           id: newAppointment?.id,
+          organization_id: organizationId,
           start_datetime: startISOForWebhook,
           end_datetime: endISOForWebhook,
           patient_id: formData.patient_id,
@@ -678,7 +665,7 @@ export default function Agenda() {
           created_at: new Date().toISOString()
         };
 
-        await fetch('https://webhook.u4digital.com.br/webhook/labz-criar-agenda', {
+        await fetch(`${import.meta.env.VITE_N8N_WEBHOOK_URL}criar-agenda`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -692,21 +679,8 @@ export default function Agenda() {
         console.warn('⚠️ Erro ao disparar webhook (compromisso foi criado):', webhookError);
       }
 
-      toast.success("Compromisso criado com sucesso!");
-      setIsCreateModalOpen(false);
-      
-      // Limpar formulário
-      setFormData({
-        start_date: "",
-        start_time: "",
-        end_date: "",
-        end_time: "",
-        patient_id: "",
-        patient_name: "",
-        type: "",
-        status: "pending",
-        observations: ""
-      });
+      // Recarregar a página após criar compromisso e enviar webhook
+      window.location.reload();
     } catch (error) {
       console.error('Erro ao criar compromisso:', error);
       toast.error("Erro ao criar compromisso");
