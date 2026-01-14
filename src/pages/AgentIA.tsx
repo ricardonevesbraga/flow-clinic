@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { useChatMetrics } from "@/hooks/useChatMetrics";
 
 interface AgentConfig {
   id?: string;
@@ -44,13 +45,26 @@ const personalityLabels: Record<string, string> = {
 };
 
 export default function AgentIA() {
-  const { profile } = useAuth();
+  const { profile, organization } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [totalTokens, setTotalTokens] = useState<number>(0);
   const [totalCost, setTotalCost] = useState<number>(0);
   const [isLoadingTokens, setIsLoadingTokens] = useState(true);
+  
+  // Estados para estatísticas
+  const [conversationsToday, setConversationsToday] = useState<number>(0);
+  const [responseRate, setResponseRate] = useState<number>(0);
+  const [qualifiedLeads, setQualifiedLeads] = useState<number>(0);
+  const [avgResponseTime, setAvgResponseTime] = useState<number>(0);
+  const [avgConversationTime, setAvgConversationTime] = useState<number>(0);
+  const [totalMessages, setTotalMessages] = useState<number>(0);
+  const [messagesPerConversation, setMessagesPerConversation] = useState<number>(0);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  
+  // Hook para métricas de chat
+  const { data: chatMetrics, isLoading: isLoadingChatMetrics } = useChatMetrics();
   
   // Estados para unidades de tempo dos lembretes
   const [reminder1Value, setReminder1Value] = useState(15);
@@ -88,7 +102,8 @@ export default function AgentIA() {
   useEffect(() => {
     loadConfig();
     loadTotalTokens();
-  }, [profile?.organization_id]);
+    loadStats();
+  }, [profile?.organization_id, chatMetrics]);
 
   // Funções auxiliares para converter segundos para minutos e vice-versa
   const secondsToMinutes = (seconds: number): number => {
@@ -248,6 +263,181 @@ export default function AgentIA() {
     }
   };
 
+  const loadStats = async () => {
+    if (!profile?.organization_id) return;
+
+    try {
+      setIsLoadingStats(true);
+
+      // 1. Conversas Hoje - usar dados do useChatMetrics
+      if (chatMetrics) {
+        setConversationsToday(chatMetrics.conversationsToday);
+        setTotalMessages(chatMetrics.totalMessages);
+      }
+
+      // Função auxiliar para converter slug para nome da tabela
+      const getTableName = (slug: string): string => {
+        const parts = slug.split('-');
+        if (parts.length > 1) {
+          const lastPart = parts[parts.length - 1];
+          if (/^\d{10,}$/.test(lastPart)) {
+            parts.pop();
+          }
+        }
+        return parts.join('_') + '_chats';
+      };
+
+      if (!organization?.slug) {
+        setIsLoadingStats(false);
+        return;
+      }
+
+      const tableName = getTableName(organization.slug);
+      
+      // Buscar todas as mensagens para cálculos completos
+      const { data: allMessages, error: messagesError } = await supabase
+        .from(tableName)
+        .select('id, message, data, session_id')
+        .order('data', { ascending: true });
+
+      if (messagesError) {
+        console.error('Erro ao buscar mensagens:', messagesError);
+        setIsLoadingStats(false);
+        return;
+      }
+
+      const messages = allMessages || [];
+      
+      if (messages.length === 0) {
+        setIsLoadingStats(false);
+        return;
+      }
+
+        // Agrupar mensagens por sessão
+        const sessionMessages: Record<string, any[]> = {};
+        messages.forEach((m: any) => {
+          if (!sessionMessages[m.session_id]) {
+            sessionMessages[m.session_id] = [];
+          }
+          sessionMessages[m.session_id].push(m);
+        });
+
+        const totalConversations = Object.keys(sessionMessages).length;
+        setMessagesPerConversation(totalConversations > 0 ? Math.round(messages.length / totalConversations) : 0);
+
+        // 2. Taxa de Resposta - calcular baseado em conversas respondidas
+        let respondedConversations = 0;
+        let totalUserMessages = 0;
+        let totalAssistantMessages = 0;
+        const responseTimes: number[] = [];
+        const conversationDurations: number[] = [];
+
+        Object.values(sessionMessages).forEach((sessionMsgs: any[]) => {
+          // Ordenar mensagens da sessão por data
+          sessionMsgs.sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+          
+          let hasUserMessage = false;
+          let hasAssistantResponse = false;
+          let firstMessageTime: Date | null = null;
+          let lastMessageTime: Date | null = null;
+
+          // Calcular duração da conversa
+          if (sessionMsgs.length > 0) {
+            firstMessageTime = new Date(sessionMsgs[0].data);
+            lastMessageTime = new Date(sessionMsgs[sessionMsgs.length - 1].data);
+            
+            const duration = (lastMessageTime.getTime() - firstMessageTime.getTime()) / (1000 * 60); // em minutos
+            if (duration > 0 && duration < 1440) { // Ignorar durações muito grandes (mais de 24h)
+              conversationDurations.push(duration);
+            }
+          }
+
+          // Analisar mensagens da sessão
+          for (let i = 0; i < sessionMsgs.length; i++) {
+            const msg = sessionMsgs[i];
+            const isUserMessage = msg.message?.role === 'user' || msg.message?.from === 'user';
+            const isAssistantMessage = msg.message?.role === 'assistant' || 
+                                     msg.message?.from === 'assistant' || 
+                                     msg.message?.from === 'system';
+
+            if (isUserMessage) {
+              hasUserMessage = true;
+              totalUserMessages++;
+              
+              // Procurar próxima resposta do assistente
+              for (let j = i + 1; j < sessionMsgs.length; j++) {
+                const nextMsg = sessionMsgs[j];
+                const isNextAssistant = nextMsg.message?.role === 'assistant' || 
+                                       nextMsg.message?.from === 'assistant' || 
+                                       nextMsg.message?.from === 'system';
+                
+                if (isNextAssistant) {
+                  hasAssistantResponse = true;
+                  totalAssistantMessages++;
+                  
+                  // Calcular tempo de resposta
+                  const timeDiff = new Date(nextMsg.data).getTime() - new Date(msg.data).getTime();
+                  const minutes = timeDiff / (1000 * 60);
+                  if (minutes > 0 && minutes < 60) { // Ignorar tempos muito grandes ou negativos
+                    responseTimes.push(minutes);
+                  }
+                  break; // Encontrou resposta, parar busca
+                }
+              }
+            } else if (isAssistantMessage) {
+              totalAssistantMessages++;
+            }
+          }
+
+          // Se a conversa teve mensagem do usuário e resposta do assistente, conta como respondida
+          if (hasUserMessage && hasAssistantResponse) {
+            respondedConversations++;
+          }
+        });
+
+        // Calcular taxa de resposta (conversas respondidas / conversas com mensagens do usuário)
+        const conversationsWithUserMessages = Object.values(sessionMessages).filter((msgs: any[]) => 
+          msgs.some((m: any) => m.message?.role === 'user' || m.message?.from === 'user')
+        ).length;
+
+        const responseRateValue = conversationsWithUserMessages > 0
+          ? Math.round((respondedConversations / conversationsWithUserMessages) * 100)
+          : 0;
+        setResponseRate(responseRateValue);
+
+        // 3. Tempo Médio de Resposta
+        const avgResponseTimeValue = responseTimes.length > 0
+          ? Math.round((responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length) * 10) / 10
+          : 0;
+        setAvgResponseTime(avgResponseTimeValue);
+
+        // 4. Tempo Médio de Conversa
+        const avgConversationTimeValue = conversationDurations.length > 0
+          ? Math.round((conversationDurations.reduce((sum, time) => sum + time, 0) / conversationDurations.length) * 10) / 10
+          : 0;
+        setAvgConversationTime(avgConversationTimeValue);
+
+        // 5. Leads Qualificados - buscar da tabela clientes_followup
+        const { data: qualifiedLeadsData, error: leadsError } = await supabase
+          .from("clientes_followup")
+          .select("id, situacao")
+          .eq("organization_id", profile.organization_id)
+          .in("situacao", ["qualificado", "agendado", "concluido"]);
+
+      if (!leadsError && qualifiedLeadsData) {
+        setQualifiedLeads(qualifiedLeadsData.length);
+      } else {
+        setQualifiedLeads(0);
+      }
+
+    } catch (error) {
+      console.error("Erro ao carregar estatísticas:", error);
+      // Manter valores padrão em caso de erro
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
   const handleEdit = () => {
     setEditConfig(config);
     setIsEditing(true);
@@ -345,7 +535,7 @@ export default function AgentIA() {
             </div>
             <div>
               <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
-                Agent IA
+                Agente de IA Virtual
               </h1>
             </div>
           </div>
@@ -379,7 +569,7 @@ export default function AgentIA() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                   <Bot className="h-4 w-4" />
-                  <span className="font-medium">Nome do Agent</span>
+                  <span className="font-medium">Nome do Agente de IA</span>
                 </div>
                 <p className="text-lg font-semibold text-foreground pl-6">
                   {config.agent_name}
@@ -421,7 +611,7 @@ export default function AgentIA() {
                   {secondsToMinutes(config.customer_pause_duration_seconds)} minutos
                 </p>
                 <p className="text-xs text-muted-foreground pl-6">
-                  Pausa quando cliente solicita
+                  Pausa quando cliente solicita atendimento humano
                 </p>
               </div>
 
@@ -551,7 +741,7 @@ export default function AgentIA() {
           <div className="space-y-6">
             {/* Nome do Agent */}
             <div className="space-y-2">
-              <Label htmlFor="agent_name">Nome do Agent *</Label>
+              <Label htmlFor="agent_name">Nome do Agente de IA *</Label>
               <Input
                 id="agent_name"
                 placeholder="Ex: Sofia, Assistente Virtual, Dr. Bot"
@@ -594,7 +784,7 @@ export default function AgentIA() {
                 }}
               />
               <p className="text-xs text-muted-foreground">
-                Quanto tempo o agent deve pausar quando um atendente humano assumir
+                Quanto tempo o agente de IA virtual deve pausar quando um atendente humano assumir
               </p>
             </div>
 
@@ -613,7 +803,7 @@ export default function AgentIA() {
                 }}
               />
               <p className="text-xs text-muted-foreground">
-                Quanto tempo o agent deve pausar quando o cliente solicitar
+                Quanto tempo o agente de IA virtual deve pausar quando o cliente solicitar atendimento humano
               </p>
             </div>
 
@@ -983,22 +1173,80 @@ export default function AgentIA() {
       </Card>
 
       {/* Estatísticas */}
-      <div className="grid gap-4 md:gap-6 grid-cols-2 md:grid-cols-4 animate-fade-in-up">
+      <div className="grid gap-4 md:gap-6 grid-cols-2 md:grid-cols-4 lg:grid-cols-6 animate-fade-in-up">
         <div className="card-luxury p-4">
           <p className="text-sm text-muted-foreground mb-2">Conversas Hoje</p>
-          <p className="text-2xl font-bold text-foreground">0</p>
+          {isLoadingStats || isLoadingChatMetrics ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-accent" />
+              <span className="text-2xl font-bold text-foreground">...</span>
+            </div>
+          ) : (
+            <p className="text-2xl font-bold text-foreground">{conversationsToday}</p>
+          )}
         </div>
         <div className="card-luxury p-4">
           <p className="text-sm text-muted-foreground mb-2">Taxa de Resposta</p>
-          <p className="text-2xl font-bold text-success">0%</p>
+          {isLoadingStats ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-accent" />
+              <span className="text-2xl font-bold text-success">...</span>
+            </div>
+          ) : (
+            <p className="text-2xl font-bold text-success">{responseRate}%</p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">Conversas respondidas</p>
+        </div>
+        <div className="card-luxury p-4">
+          <p className="text-sm text-muted-foreground mb-2">Tempo de Resposta</p>
+          {isLoadingStats ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-accent" />
+              <span className="text-2xl font-bold text-foreground">...</span>
+            </div>
+          ) : (
+            <p className="text-2xl font-bold text-foreground">
+              {avgResponseTime > 0 ? `${avgResponseTime}min` : '0min'}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">Média de resposta</p>
+        </div>
+        <div className="card-luxury p-4">
+          <p className="text-sm text-muted-foreground mb-2">Tempo de Conversa</p>
+          {isLoadingStats ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-accent" />
+              <span className="text-2xl font-bold text-foreground">...</span>
+            </div>
+          ) : (
+            <p className="text-2xl font-bold text-foreground">
+              {avgConversationTime > 0 ? `${avgConversationTime}min` : '0min'}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">Duração média</p>
         </div>
         <div className="card-luxury p-4">
           <p className="text-sm text-muted-foreground mb-2">Leads Qualificados</p>
-          <p className="text-2xl font-bold text-accent">0</p>
+          {isLoadingStats ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-accent" />
+              <span className="text-2xl font-bold text-accent">...</span>
+            </div>
+          ) : (
+            <p className="text-2xl font-bold text-accent">{qualifiedLeads}</p>
+          )}
         </div>
         <div className="card-luxury p-4">
-          <p className="text-sm text-muted-foreground mb-2">Tempo Médio</p>
-          <p className="text-2xl font-bold text-foreground">0min</p>
+          <p className="text-sm text-muted-foreground mb-2">Mensagens/Conversa</p>
+          {isLoadingStats ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-accent" />
+              <span className="text-2xl font-bold text-foreground">...</span>
+            </div>
+          ) : (
+            <p className="text-2xl font-bold text-foreground">{messagesPerConversation}</p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">Média por conversa</p>
         </div>
       </div>
     </div>

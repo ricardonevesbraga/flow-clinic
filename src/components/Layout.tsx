@@ -9,16 +9,16 @@ import {
   Moon,
   Sun,
   Menu,
-  X,
   LogOut,
-  ChevronDown,
   ChevronRight,
   Kanban as KanbanIcon,
   Bot,
   BookOpen,
   Crown,
   Check,
-  Sparkles
+  Sparkles,
+  PanelLeftClose,
+  PanelLeftOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -27,7 +27,6 @@ import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogContent,
@@ -45,27 +44,22 @@ import SupportButton from "@/components/SupportButton";
 const allNavigationItems = [
   { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard, requiredFeature: null },
   { name: "Agenda", href: "/app/agenda", icon: Calendar, requiredFeature: 'agendamento_automatico' as const },
-  { 
-    name: "Clientes", 
-    href: "/app/clientes", 
-    icon: Users,
-    requiredFeature: null,
-    subItems: [
-      { name: "Contatos", href: "/app/clientes/crm", icon: Users },
-      { name: "CRM", href: "/app/clientes/kanban", icon: KanbanIcon }
-    ]
-  },
-  { name: "Agent IA", href: "/app/agent-ia", icon: Bot, requiredFeature: null },
-  { name: "Conhecimento do Agent", href: "/app/conhecimento", icon: BookOpen, requiredFeature: 'base_conhecimento' as const },
-  { name: "Integração", href: "/app/integrations", icon: Plug, requiredFeature: null },
+  { name: "Clientes", href: "/app/clientes/crm", icon: Users, requiredFeature: null },
+  { name: "Kanban", href: "/app/clientes/kanban", icon: KanbanIcon, requiredFeature: null },
+  { name: "Agente de IA", href: "/app/agent-ia", icon: Bot, requiredFeature: null },
+  { name: "Conhecimento do Agente", href: "/app/conhecimento", icon: BookOpen, requiredFeature: 'base_conhecimento' as const },
+  { name: "Integração WhatsApp", href: "/app/integrations", icon: Plug, requiredFeature: null },
 ];
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({ onNavigate, isCollapsed, onToggleCollapse }: { 
+  onNavigate?: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+}) {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { profile, organization, signOut } = useAuth();
   const { features } = usePlanFeatures();
-  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [selectedPlanForRequest, setSelectedPlanForRequest] = useState<string | null>(null);
 
@@ -145,37 +139,72 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col relative">
+      {/* Botão de Colapsar/Expandir */}
+      {onToggleCollapse && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggleCollapse}
+          className="absolute -right-3 top-4 z-50 h-6 w-6 rounded-full border border-border bg-card shadow-md hover:bg-accent hover:text-accent-foreground"
+        >
+          {isCollapsed ? (
+            <PanelLeftOpen className="h-3.5 w-3.5" />
+          ) : (
+            <PanelLeftClose className="h-3.5 w-3.5" />
+          )}
+          <span className="sr-only">{isCollapsed ? 'Expandir' : 'Colapsar'} sidebar</span>
+        </Button>
+      )}
+
       {/* Logo & Organization */}
-      <div className="border-b border-border/50 px-4 md:px-6 py-4">
-        <div className="flex items-center justify-between mb-3">
+      <div className={cn(
+        "border-b border-border/50 py-4 transition-all duration-300",
+        isCollapsed ? "px-2" : "px-4 md:px-6"
+      )}>
+        <div className={cn(
+          "flex items-center mb-3 transition-all duration-300",
+          isCollapsed ? "justify-center" : "justify-between"
+        )}>
           {/* Logo ou Nome */}
           {organization?.logo_url ? (
             <img
               src={organization.logo_url}
               alt={organization.name}
-              className="h-10 md:h-12 w-auto max-w-[160px] object-contain"
+              className={cn(
+                "w-auto object-contain transition-all duration-300",
+                isCollapsed ? "h-8 max-w-[40px]" : "h-10 md:h-12 max-w-[160px]"
+              )}
             />
           ) : (
-            <h1 className="font-display text-xl md:text-2xl font-bold tracking-tight text-foreground">
-              Flow<span className="text-accent">Clinic</span>
+            <h1 className={cn(
+              "font-display font-bold tracking-tight text-foreground transition-all duration-300",
+              isCollapsed ? "text-lg" : "text-xl md:text-2xl"
+            )}>
+              {isCollapsed ? (
+                <span className="text-accent">FC</span>
+              ) : (
+                <>Flow<span className="text-accent">Clinic</span></>
+              )}
             </h1>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className="h-9 w-9 shrink-0"
-          >
-            {theme === "light" ? (
-              <Moon className="h-4 w-4" />
-            ) : (
-              <Sun className="h-4 w-4" />
-            )}
-            <span className="sr-only">Alternar tema</span>
-          </Button>
+          {!isCollapsed && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="h-9 w-9 shrink-0"
+            >
+              {theme === "light" ? (
+                <Moon className="h-4 w-4" />
+              ) : (
+                <Sun className="h-4 w-4" />
+              )}
+              <span className="sr-only">Alternar tema</span>
+            </Button>
+          )}
         </div>
-        {organization && (
+        {organization && !isCollapsed && (
           <div className="px-2">
             <p className="text-xs font-medium text-muted-foreground">Organização</p>
             <p className="text-sm font-semibold text-foreground truncate">{organization.name}</p>
@@ -184,74 +213,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 md:px-4 py-6 md:py-8 overflow-y-auto">
+      <nav className={cn(
+        "flex-1 space-y-1 py-6 md:py-8 overflow-y-auto transition-all duration-300",
+        isCollapsed ? "px-2" : "px-3 md:px-4"
+      )}>
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;
-          const hasSubItems = 'subItems' in item && item.subItems && item.subItems.length > 0;
-          const isSubItemActive = hasSubItems && item.subItems?.some(sub => location.pathname === sub.href);
-          const isOpen = openMenus[item.name] ?? (isActive || isSubItemActive);
-
-          if (hasSubItems) {
-            return (
-              <Collapsible 
-                key={item.name} 
-                open={isOpen} 
-                onOpenChange={(open) => setOpenMenus(prev => ({ ...prev, [item.name]: open }))}
-              >
-                <CollapsibleTrigger asChild>
-                  <div
-                    className={cn(
-                      "group flex items-center justify-between gap-3 rounded-lg px-3 md:px-4 py-2.5 md:py-3 text-sm font-medium transition-all duration-200 cursor-pointer",
-                      isActive || isSubItemActive
-                        ? "bg-accent/10 text-accent"
-                        : "text-foreground/70 hover:bg-secondary hover:text-foreground"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <item.icon
-                        className={cn(
-                          "h-5 w-5 shrink-0 transition-all duration-200",
-                          isActive || isSubItemActive ? "text-accent" : "text-foreground/50 group-hover:text-foreground"
-                        )}
-                      />
-                      <span className="truncate">{item.name}</span>
-                    </div>
-                    {isOpen ? (
-                      <ChevronDown className="h-4 w-4 shrink-0" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 shrink-0" />
-                    )}
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-1 pl-6 mt-1">
-                  {item.subItems?.map((subItem) => {
-                    const isSubActive = location.pathname === subItem.href;
-                    return (
-                      <NavLink
-                        key={subItem.name}
-                        to={subItem.href}
-                        onClick={onNavigate}
-                        className={cn(
-                          "group flex items-center gap-3 rounded-lg px-3 md:px-4 py-2 md:py-2.5 text-sm font-medium transition-all duration-200",
-                          isSubActive
-                            ? "bg-accent/10 text-accent"
-                            : "text-foreground/70 hover:bg-secondary hover:text-foreground"
-                        )}
-                      >
-                        <subItem.icon
-                          className={cn(
-                            "h-4 w-4 shrink-0 transition-all duration-200",
-                            isSubActive ? "text-accent" : "text-foreground/50 group-hover:text-foreground"
-                          )}
-                        />
-                        <span className="truncate">{subItem.name}</span>
-                      </NavLink>
-                    );
-                  })}
-                </CollapsibleContent>
-              </Collapsible>
-            );
-          }
 
           return (
             <NavLink
@@ -259,11 +226,13 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               to={item.href}
               onClick={onNavigate}
               className={cn(
-                "group flex items-center gap-3 rounded-lg px-3 md:px-4 py-2.5 md:py-3 text-sm font-medium transition-all duration-200",
+                "group flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200",
+                isCollapsed ? "justify-center p-2.5 md:p-3" : "px-3 md:px-4 py-2.5 md:py-3",
                 isActive
                   ? "bg-accent/10 text-accent"
                   : "text-foreground/70 hover:bg-secondary hover:text-foreground"
               )}
+              title={isCollapsed ? item.name : undefined}
             >
               <item.icon
                 className={cn(
@@ -271,16 +240,19 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                   isActive ? "text-accent" : "text-foreground/50 group-hover:text-foreground"
                 )}
               />
-              <span className="truncate">{item.name}</span>
+              {!isCollapsed && <span className="truncate">{item.name}</span>}
             </NavLink>
           );
         })}
       </nav>
 
       {/* User Profile */}
-      <div className="border-t border-border/50 p-3 md:p-4 space-y-3">
+      <div className={cn(
+        "border-t border-border/50 space-y-3 transition-all duration-300",
+        isCollapsed ? "p-2" : "p-3 md:p-4"
+      )}>
         {/* Badge do Plano */}
-        {currentPlan && (
+        {currentPlan && !isCollapsed && (
           <div 
             onClick={() => setIsPlanModalOpen(true)}
             className={cn(
@@ -306,29 +278,54 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
         )}
 
-        <div className="flex items-center gap-3 rounded-lg bg-secondary/50 px-3 md:px-4 py-2.5 md:py-3">
+        {currentPlan && isCollapsed && (
+          <div 
+            onClick={() => setIsPlanModalOpen(true)}
+            className="rounded-lg border-2 p-2 cursor-pointer transition-all hover:border-accent hover:shadow-lg flex items-center justify-center"
+            title={currentPlan.plan_name}
+          >
+            <Crown className={cn(
+              "h-5 w-5",
+              currentPlan.plan_id === 'plano_a' && "text-blue-500",
+              currentPlan.plan_id === 'plano_b' && "text-purple-500",
+              currentPlan.plan_id === 'plano_c' && "text-amber-500",
+              currentPlan.plan_id === 'plano_d' && "text-emerald-500"
+            )} />
+          </div>
+        )}
+
+        <div className={cn(
+          "flex items-center rounded-lg bg-secondary/50 transition-all duration-300",
+          isCollapsed ? "justify-center p-2" : "gap-3 px-3 md:px-4 py-2.5 md:py-3"
+        )}>
           <div className="flex h-9 w-9 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full bg-accent/20">
             <span className="font-display text-xs md:text-sm font-semibold text-accent">
               {profile?.full_name?.charAt(0).toUpperCase() || 'U'}
             </span>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
-              {profile?.full_name || 'Usuário'}
-            </p>
-            <p className="text-xs text-muted-foreground truncate capitalize">
-              {profile?.role || 'doctor'}
-            </p>
-          </div>
+          {!isCollapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">
+                {profile?.full_name || 'Usuário'}
+              </p>
+              <p className="text-xs text-muted-foreground truncate capitalize">
+                {profile?.role || 'doctor'}
+              </p>
+            </div>
+          )}
         </div>
         <Button
           variant="ghost"
           size="sm"
           onClick={handleSignOut}
-          className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+          className={cn(
+            "w-full text-muted-foreground hover:text-foreground transition-all duration-300",
+            isCollapsed ? "justify-center p-2" : "justify-start gap-2"
+          )}
+          title={isCollapsed ? "Sair" : undefined}
         >
           <LogOut className="h-4 w-4" />
-          Sair
+          {!isCollapsed && <span>Sair</span>}
         </Button>
       </div>
 
@@ -518,13 +515,24 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
 export default function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { theme, toggleTheme } = useTheme();
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(prev => !prev);
+  };
 
   return (
     <div className="flex min-h-screen w-full bg-background">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:fixed lg:left-0 lg:top-0 lg:z-40 lg:flex lg:h-screen lg:w-64 lg:border-r lg:border-border/50 lg:bg-card">
-        <SidebarContent />
+      <aside className={cn(
+        "hidden lg:fixed lg:left-0 lg:top-0 lg:z-40 lg:flex lg:h-screen lg:border-r lg:border-border/50 lg:bg-card transition-all duration-300",
+        isSidebarCollapsed ? "lg:w-16" : "lg:w-64"
+      )}>
+        <SidebarContent 
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={toggleSidebar}
+        />
       </aside>
 
       {/* Mobile Header */}
@@ -563,7 +571,10 @@ export default function Layout() {
       </header>
 
       {/* Main Content */}
-      <main className="w-full lg:ml-64 h-screen pt-16 lg:pt-0 overflow-hidden">
+      <main className={cn(
+        "w-full h-screen pt-16 lg:pt-0 overflow-hidden transition-all duration-300",
+        isSidebarCollapsed ? "lg:ml-16" : "lg:ml-64"
+      )}>
         <div className="h-full overflow-y-auto">
           <Outlet />
         </div>

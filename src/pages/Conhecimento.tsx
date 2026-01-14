@@ -433,7 +433,7 @@ export default function Conhecimento() {
             </div>
             <div>
               <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
-                Conhecimento do Assistente Virtual
+                Conhecimento do Agente de IA Virtual
               </h1>
             </div>
           </div>
@@ -443,7 +443,7 @@ export default function Conhecimento() {
           </Badge>
         </div>
         <p className="text-base md:text-lg text-muted-foreground">
-          Configure a base de conhecimento do seu assistente virtual
+          Configure a base de conhecimento do seu agente de IA virtual
         </p>
       </div>
 
@@ -455,7 +455,7 @@ export default function Conhecimento() {
             Upload de Documentos
           </CardTitle>
           <CardDescription>
-            Envie documentos PDF para treinar seu assistente virtual com informações específicas da sua clínica
+            Envie documentos PDF para treinar seu agente de IA virtual com informações específicas da sua clínica
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -527,7 +527,7 @@ export default function Conhecimento() {
               ) : (
                 <>
                   <Upload className="h-5 w-5" />
-                  Subir Base de Conhecimento do Agent
+                  Subir Base de Conhecimento do Agente de IA
                 </>
               )}
             </Button>
@@ -540,8 +540,8 @@ export default function Conhecimento() {
             </h4>
             <ul className="text-xs text-muted-foreground space-y-1">
               <li>• Envie documentos em PDF sobre sua clínica, procedimentos, políticas, etc.</li>
-              <li>• O Agent usará essas informações para responder perguntas dos clientes</li>
-              <li>• Quanto mais informações você fornecer, mais preciso será o assistente</li>
+              <li>• O Agente de IA usará essas informações para responder perguntas dos clientes</li>
+              <li>• Quanto mais informações você fornecer, mais preciso será o agente de IA</li>
               <li>• O processamento pode levar alguns minutos</li>
             </ul>
           </div>

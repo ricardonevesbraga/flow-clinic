@@ -378,112 +378,240 @@ export default function CRM() {
         </div>
       ) : (
         <div className="grid gap-4 md:gap-5 lg:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredPatients.map((patient, index) => (
-            <div
-              key={patient.id}
-              className="card-luxury group p-4 md:p-5 lg:p-6 animate-fade-in-up"
-              style={{ animationDelay: `${0.1 * index}s` }}
-            >
-              {/* Patient Header */}
-              <div className="mb-4 flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2.5 md:gap-3 min-w-0">
-                  <div className="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-full bg-accent/10 font-display text-base md:text-lg font-semibold text-accent">
-                    {patient.name
-                      ? patient.name.split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase()
-                      : "?"
-                    }
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold text-foreground text-sm md:text-base truncate">
-                      {patient.name || "Sem nome"}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span
-                        className={`text-xs font-medium ${
-                          patient.status === "active"
-                            ? "text-success"
-                            : "text-muted-foreground"
-                        }`}
-                      >
-                        {patient.status === "active" ? "Ativo" : "Inativo"}
-                      </span>
-                      {patient.kanban_status && (() => {
-                        const statusInfo = kanbanStatuses.find(s => s.id === patient.kanban_status);
-                        return statusInfo ? (
+          {filteredPatients.map((patient, index) => {
+            // Determinar cor baseada no status do kanban
+            const getCardColor = () => {
+              if (!patient.kanban_status) {
+                return {
+                  gradient: "from-blue-500/10 via-blue-500/5 to-transparent",
+                  border: "border-blue-500/20",
+                  avatar: "bg-gradient-to-br from-blue-500/20 to-blue-500/10 text-blue-600",
+                  accent: "text-blue-600"
+                };
+              }
+              
+              switch (patient.kanban_status) {
+                case "novo_contato":
+                  return {
+                    gradient: "from-blue-500/10 via-blue-500/5 to-transparent",
+                    border: "border-blue-500/30",
+                    avatar: "bg-gradient-to-br from-blue-500/20 to-blue-500/10 text-blue-600",
+                    accent: "text-blue-600"
+                  };
+                case "qualificado":
+                  return {
+                    gradient: "from-purple-500/10 via-purple-500/5 to-transparent",
+                    border: "border-purple-500/30",
+                    avatar: "bg-gradient-to-br from-purple-500/20 to-purple-500/10 text-purple-600",
+                    accent: "text-purple-600"
+                  };
+                case "em_atendimento":
+                  return {
+                    gradient: "from-yellow-500/10 via-yellow-500/5 to-transparent",
+                    border: "border-yellow-500/30",
+                    avatar: "bg-gradient-to-br from-yellow-500/20 to-yellow-500/10 text-yellow-600",
+                    accent: "text-yellow-600"
+                  };
+                case "agendado":
+                  return {
+                    gradient: "from-cyan-500/10 via-cyan-500/5 to-transparent",
+                    border: "border-cyan-500/30",
+                    avatar: "bg-gradient-to-br from-cyan-500/20 to-cyan-500/10 text-cyan-600",
+                    accent: "text-cyan-600"
+                  };
+                case "aguardando_confirmacao":
+                  return {
+                    gradient: "from-orange-500/10 via-orange-500/5 to-transparent",
+                    border: "border-orange-500/30",
+                    avatar: "bg-gradient-to-br from-orange-500/20 to-orange-500/10 text-orange-600",
+                    accent: "text-orange-600"
+                  };
+                case "concluido":
+                  return {
+                    gradient: "from-green-500/10 via-green-500/5 to-transparent",
+                    border: "border-green-500/30",
+                    avatar: "bg-gradient-to-br from-green-500/20 to-green-500/10 text-green-600",
+                    accent: "text-green-600"
+                  };
+                default:
+                  return {
+                    gradient: "from-accent/10 via-accent/5 to-transparent",
+                    border: "border-accent/30",
+                    avatar: "bg-gradient-to-br from-accent/20 to-accent/10 text-accent",
+                    accent: "text-accent"
+                  };
+              }
+            };
+
+            const colors = getCardColor();
+            const statusInfo = patient.kanban_status 
+              ? kanbanStatuses.find(s => s.id === patient.kanban_status)
+              : null;
+
+            return (
+              <div
+                key={patient.id}
+                onClick={() => setSelectedPatient(patient)}
+                className={cn(
+                  "group relative overflow-hidden rounded-xl border-2 p-5 md:p-6 lg:p-7",
+                  "bg-gradient-to-br",
+                  colors.gradient,
+                  colors.border,
+                  "shadow-md hover:shadow-xl transition-all duration-300",
+                  "hover:scale-[1.02] hover:-translate-y-1 cursor-pointer",
+                  "animate-fade-in-up"
+                )}
+                style={{ animationDelay: `${0.05 * index}s` }}
+              >
+                {/* Decorative corner accent */}
+                <div className={cn(
+                  "absolute top-0 right-0 w-20 h-20 rounded-bl-full opacity-10",
+                  colors.gradient.replace("from-", "bg-").split("/")[0] + "/20"
+                )} />
+
+                {/* Patient Header */}
+                <div className="mb-4 flex items-start justify-between gap-3 relative z-10">
+                  <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
+                    <div className={cn(
+                      "flex h-12 w-12 md:h-14 md:w-14 shrink-0 items-center justify-center rounded-xl font-display text-lg md:text-xl font-bold shadow-lg",
+                      colors.avatar
+                    )}>
+                      {patient.name
+                        ? patient.name.split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()
+                            .slice(0, 2)
+                        : "?"
+                      }
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-bold text-foreground text-base md:text-lg truncate mb-1">
+                        {patient.name || "Sem nome"}
+                      </h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={cn(
+                            "text-xs font-semibold px-2 py-0.5 rounded-full",
+                            patient.status === "active"
+                              ? "bg-green-500/10 text-green-600 border border-green-500/20"
+                              : "bg-gray-500/10 text-gray-600 border border-gray-500/20"
+                          )}
+                        >
+                          {patient.status === "active" ? "Ativo" : "Inativo"}
+                        </span>
+                        {statusInfo && (
                           <Badge 
                             variant="outline" 
-                            className={cn("text-[10px] h-5 px-2", statusInfo.color)}
+                            className={cn(
+                              "text-[10px] h-5 px-2 font-semibold border-2",
+                              statusInfo.color
+                            )}
                           >
                             {statusInfo.title}
                           </Badge>
-                        ) : null;
-                      })()}
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="shrink-0 rounded-full bg-accent/10 px-2.5 md:px-3 py-1 text-xs font-medium text-accent whitespace-nowrap">
-                  {patient.total_visits} {patient.total_visits === 1 ? "visita" : "visitas"}
-                </div>
-              </div>
-
-              {/* Contact Info */}
-              <div className="space-y-2 border-t border-border/50 pt-3 md:pt-4">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Mail className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />
-                  <span className="truncate text-xs md:text-sm">
-                    {patient.email || "Sem email"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Phone className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />
-                  <span className="text-xs md:text-sm">
-                    {formatPhoneNumber(patient.phone) || "Sem telefone"}
-                  </span>
-                </div>
-                
-                {/* Observações */}
-                {patient.observations && (
-                  <div className="flex items-start gap-2 text-sm text-muted-foreground mt-2 pt-2 border-t border-border/30">
-                    <FileText className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0 mt-0.5" />
-                    <p className="text-xs md:text-sm line-clamp-2">
-                      {patient.observations}
-                    </p>
+                  <div className={cn(
+                    "shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold shadow-md",
+                    colors.avatar,
+                    "border border-white/20"
+                  )}>
+                    {patient.total_visits} {patient.total_visits === 1 ? "visita" : "visitas"}
                   </div>
-                )}
-              </div>
-
-              {/* Footer */}
-              <div className="mt-3 md:mt-4 border-t border-border/50 pt-3 md:pt-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                  <span className="text-xs text-muted-foreground">
-                    Última visita: {patient.last_visit ? new Date(patient.last_visit).toLocaleDateString('pt-BR') : 'Nunca'}
-                  </span>
-                  <button 
-                    onClick={() => setSelectedPatient(patient)}
-                    className="text-xs md:text-sm font-medium text-accent transition-colors hover:text-accent/80 self-start"
-                  >
-                    Ver Detalhes
-                  </button>
                 </div>
-                
-                {/* Botão Ver Resumo */}
-                {patient.resumo && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setResumoPatient(patient)}
-                    className="w-full gap-2 text-xs"
-                  >
-                    <MessageSquare className="h-3.5 w-3.5" />
-                    Ver resumo da conversa
-                  </Button>
-                )}
+
+                {/* Contact Info */}
+                <div className="space-y-2.5 border-t border-border/30 pt-4 relative z-10">
+                  <div className="flex items-center gap-2.5 p-2 rounded-lg bg-background/50 hover:bg-background/80 transition-colors">
+                    <div className={cn(
+                      "flex h-8 w-8 items-center justify-center rounded-lg",
+                      colors.avatar.replace("text-", "bg-").replace("/20", "/10").replace("/10", "/10")
+                    )}>
+                      <Mail className={cn("h-3.5 w-3.5", colors.accent)} />
+                    </div>
+                    <span className="truncate text-xs md:text-sm text-foreground font-medium flex-1">
+                      {patient.email || "Sem email"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2.5 p-2 rounded-lg bg-background/50 hover:bg-background/80 transition-colors">
+                    <div className={cn(
+                      "flex h-8 w-8 items-center justify-center rounded-lg",
+                      colors.avatar.replace("text-", "bg-").replace("/20", "/10").replace("/10", "/10")
+                    )}>
+                      <Phone className={cn("h-3.5 w-3.5", colors.accent)} />
+                    </div>
+                    <span className="text-xs md:text-sm text-foreground font-medium">
+                      {formatPhoneNumber(patient.phone) || "Sem telefone"}
+                    </span>
+                  </div>
+                  
+                  {/* Observações */}
+                  {patient.observations && (
+                    <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-background/50 mt-2 border border-border/20">
+                      <div className={cn(
+                        "flex h-8 w-8 items-center justify-center rounded-lg shrink-0",
+                        colors.avatar.replace("text-", "bg-").replace("/20", "/10").replace("/10", "/10")
+                      )}>
+                        <FileText className={cn("h-3.5 w-3.5", colors.accent)} />
+                      </div>
+                      <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 flex-1">
+                        {patient.observations}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="mt-4 border-t border-border/30 pt-4 relative z-10">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground font-medium">
+                        Última visita: {patient.last_visit ? new Date(patient.last_visit).toLocaleDateString('pt-BR') : 'Nunca'}
+                      </span>
+                    </div>
+                    
+                    {/* Botão Ver Resumo */}
+                    {patient.resumo && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setResumoPatient(patient);
+                        }}
+                        className={cn(
+                          "w-full gap-2 text-xs font-semibold border-2 transition-all hover:scale-105",
+                          colors.border,
+                          "hover:" + colors.border.replace("/30", "/50")
+                        )}
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        Ver resumo da conversa
+                      </Button>
+                    )}
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedPatient(patient);
+                      }}
+                      className={cn(
+                        "w-full gap-2 text-xs font-semibold hover:bg-background/80",
+                        colors.accent
+                      )}
+                    >
+                      Ver Detalhes →
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

@@ -46,14 +46,14 @@ export default function Login() {
             🏥 FlowClinic 🏥
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground">
-            Entre com suas credenciais para acessar o sistema
+            Informe seu email e senha para acessar o sistema
           </CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground">Email</Label>
+              <Label htmlFor="email" className="text-foreground">E-mail</Label>
               <Input
                 id="email"
                 type="email"
@@ -87,7 +87,7 @@ export default function Login() {
                 to="/forgot-password"
                 className="text-sm text-accent hover:text-accent/80 hover:underline transition-colors"
               >
-                Esqueceu sua senha?
+                Esqueceu a sua senha? Recupere agora.
               </Link>
             </div>
           </CardContent>
@@ -104,7 +104,7 @@ export default function Login() {
             <p className="text-sm text-center text-muted-foreground">
               Não tem uma conta?{' '}
               <Link to="/register" className="text-accent font-semibold hover:text-accent/80 hover:underline transition-colors">
-                Cadastre-se
+                Cadastre-se agora.
               </Link>
             </p>
           </CardFooter>

@@ -88,10 +88,10 @@ export default function TokenUsage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-black">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-blue-400">Carregando gastos...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Carregando gastos...</p>
         </div>
       </div>
     );
@@ -108,7 +108,7 @@ export default function TokenUsage() {
       value: grandTotalTokens.toLocaleString('pt-BR'),
       description: `${orgTokens.length} organizações`,
       icon: Zap,
-      color: "from-blue-500 to-cyan-500",
+      color: "from-pink-500 to-rose-500",
     },
     {
       title: "Custo Total",
@@ -120,7 +120,7 @@ export default function TokenUsage() {
       }),
       description: "Todos os gastos",
       icon: DollarSign,
-      color: "from-green-500 to-emerald-500",
+      color: "from-rose-400 to-pink-400",
     },
     {
       title: "Média por Organização",
@@ -132,23 +132,23 @@ export default function TokenUsage() {
       }),
       description: "Custo médio",
       icon: TrendingUp,
-      color: "from-indigo-500 to-blue-500",
+      color: "from-pink-400 to-fuchsia-500",
     },
     {
       title: "Organizações Ativas",
       value: orgTokens.length,
       description: "Com consumo registrado",
       icon: Activity,
-      color: "from-teal-500 to-cyan-500",
+      color: "from-rose-500 to-pink-500",
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-black min-h-screen p-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-blue-100">Observabilidade - Gastos de Token</h1>
-        <p className="text-blue-400 mt-1">
+        <h1 className="text-3xl font-bold text-white">Observabilidade - Gastos de Token</h1>
+        <p className="text-gray-400 mt-1">
           Consumo de tokens e custos por organização
         </p>
       </div>
@@ -160,10 +160,10 @@ export default function TokenUsage() {
           return (
             <Card
               key={kpi.title}
-              className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl"
+              className="border-pink-500/30 bg-black/80 backdrop-blur-xl"
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-blue-100">
+                <CardTitle className="text-sm font-medium text-white">
                   {kpi.title}
                 </CardTitle>
                 <div
@@ -173,10 +173,10 @@ export default function TokenUsage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-50">
+                <div className="text-2xl font-bold text-white">
                   {kpi.value}
                 </div>
-                <p className="text-xs text-blue-400 mt-1">{kpi.description}</p>
+                <p className="text-xs text-gray-400 mt-1">{kpi.description}</p>
               </CardContent>
             </Card>
           );
@@ -184,34 +184,34 @@ export default function TokenUsage() {
       </div>
 
       {/* Resumo Detalhado */}
-      <Card className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl">
+      <Card className="border-pink-500/30 bg-black/80 backdrop-blur-xl">
         <CardHeader>
-          <CardTitle className="text-blue-100">Resumo Detalhado</CardTitle>
-          <CardDescription className="text-blue-400">
+          <CardTitle className="text-white">Resumo Detalhado</CardTitle>
+          <CardDescription className="text-gray-400">
             Estatísticas gerais de consumo
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-slate-800/40 rounded-lg p-4 border border-blue-800/30">
+            <div className="bg-black/60 rounded-lg p-4 border border-pink-500/30">
               <div className="flex items-center gap-2 mb-2">
-                <Zap className="h-4 w-4 text-blue-400" />
-                <p className="text-sm text-blue-400">Total de Tokens</p>
+                <Zap className="h-4 w-4 text-pink-500" />
+                <p className="text-sm text-gray-400">Total de Tokens</p>
               </div>
-              <p className="text-2xl font-bold text-blue-100">
+              <p className="text-2xl font-bold text-white">
                 {grandTotalTokens.toLocaleString('pt-BR')}
               </p>
-              <p className="text-xs text-blue-400 mt-1">
+              <p className="text-xs text-gray-400 mt-1">
                 Média: {Math.round(avgTokensPerOrg).toLocaleString('pt-BR')} por org
               </p>
             </div>
             
-            <div className="bg-slate-800/40 rounded-lg p-4 border border-blue-800/30">
+            <div className="bg-black/60 rounded-lg p-4 border border-pink-500/30">
               <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="h-4 w-4 text-green-400" />
-                <p className="text-sm text-blue-400">Custo Total</p>
+                <DollarSign className="h-4 w-4 text-pink-500" />
+                <p className="text-sm text-gray-400">Custo Total</p>
               </div>
-              <p className="text-2xl font-bold text-green-400">
+              <p className="text-2xl font-bold text-pink-500">
                 {grandTotalCost.toLocaleString('pt-BR', {
                   style: 'currency',
                   currency: 'BRL',
@@ -219,7 +219,7 @@ export default function TokenUsage() {
                   maximumFractionDigits: 2
                 })}
               </p>
-              <p className="text-xs text-blue-400 mt-1">
+              <p className="text-xs text-gray-400 mt-1">
                 Média: {avgCostPerOrg.toLocaleString('pt-BR', {
                   style: 'currency',
                   currency: 'BRL',
@@ -229,15 +229,15 @@ export default function TokenUsage() {
               </p>
             </div>
 
-            <div className="bg-slate-800/40 rounded-lg p-4 border border-blue-800/30">
+            <div className="bg-black/60 rounded-lg p-4 border border-pink-500/30">
               <div className="flex items-center gap-2 mb-2">
-                <Building2 className="h-4 w-4 text-blue-400" />
-                <p className="text-sm text-blue-400">Organizações</p>
+                <Building2 className="h-4 w-4 text-pink-500" />
+                <p className="text-sm text-gray-400">Organizações</p>
               </div>
-              <p className="text-2xl font-bold text-blue-100">
+              <p className="text-2xl font-bold text-white">
                 {orgTokens.length}
               </p>
-              <p className="text-xs text-blue-400 mt-1">
+              <p className="text-xs text-gray-400 mt-1">
                 Com consumo registrado
               </p>
             </div>
@@ -252,10 +252,10 @@ export default function TokenUsage() {
         </h2>
         
         {orgTokens.length === 0 ? (
-          <Card className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl">
+          <Card className="border-pink-500/30 bg-black/80 backdrop-blur-xl">
             <CardContent className="py-12 text-center">
-              <Zap className="h-16 w-16 mx-auto mb-4 text-blue-500/50" />
-              <p className="text-lg text-blue-400">
+              <Zap className="h-16 w-16 mx-auto mb-4 text-pink-500/50" />
+              <p className="text-lg text-gray-400">
                 Nenhum consumo de token registrado ainda
               </p>
             </CardContent>
@@ -267,7 +267,7 @@ export default function TokenUsage() {
               return (
                 <Card
                   key={org.organization_id}
-                  className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl hover:border-blue-600/50 transition-all"
+                  className="border-pink-500/30 bg-black/80 backdrop-blur-xl hover:border-pink-600/50 transition-all"
                 >
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -279,15 +279,15 @@ export default function TokenUsage() {
                             className="h-10 w-10 rounded-full object-cover flex-shrink-0"
                           />
                         ) : (
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex-shrink-0">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex-shrink-0">
                             <Building2 className="h-5 w-5 text-white" />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <CardTitle className="text-blue-100 truncate">
+                          <CardTitle className="text-white truncate">
                             {org.organization_name}
                           </CardTitle>
-                          <CardDescription className="text-blue-400 text-xs">
+                          <CardDescription className="text-gray-400 text-xs">
                             {percentage.toFixed(1)}% do total
                           </CardDescription>
                         </div>
@@ -297,24 +297,24 @@ export default function TokenUsage() {
                   <CardContent>
                     <div className="space-y-3">
                       {/* Barra de progresso visual */}
-                      <div className="w-full bg-slate-800/40 rounded-full h-2 overflow-hidden">
+                      <div className="w-full bg-black/60 rounded-full h-2 overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all"
+                          className="h-full bg-gradient-to-r from-pink-500 to-rose-500 rounded-full transition-all"
                           style={{ width: `${Math.min(percentage, 100)}%` }}
                         />
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-slate-800/40 rounded-lg p-3 border border-blue-800/30">
-                          <p className="text-xs text-blue-400 mb-1">Tokens</p>
-                          <p className="text-lg font-bold text-blue-100">
+                        <div className="bg-black/60 rounded-lg p-3 border border-pink-500/30">
+                          <p className="text-xs text-gray-400 mb-1">Tokens</p>
+                          <p className="text-lg font-bold text-white">
                             {org.total_tokens.toLocaleString('pt-BR')}
                           </p>
                         </div>
 
-                        <div className="bg-slate-800/40 rounded-lg p-3 border border-blue-800/30">
-                          <p className="text-xs text-blue-400 mb-1">Custo</p>
-                          <p className="text-lg font-bold text-green-400">
+                        <div className="bg-black/60 rounded-lg p-3 border border-pink-500/30">
+                          <p className="text-xs text-gray-400 mb-1">Custo</p>
+                          <p className="text-lg font-bold text-pink-500">
                             {org.total_cost.toLocaleString('pt-BR', {
                               style: 'currency',
                               currency: 'BRL',

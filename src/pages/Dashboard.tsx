@@ -177,111 +177,47 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* KPI Grid - Adaptado ao plano */}
-      <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Métricas de Atendimento (sempre visível) */}
-        <KPICard
-          title="Conversas Hoje"
-          value={chatMetrics?.conversationsToday || 0}
-          change={`${chatMetrics?.messagesToday || 0} mensagens`}
-          changeType="positive"
-          icon={MessageSquare}
-          description="Atendimentos do dia"
-        />
-        <KPICard
-          title="Total de Conversas"
-          value={chatMetrics?.totalConversations || 0}
-          change={`${chatMetrics?.conversationsThisMonth || 0} este mês`}
-          changeType="positive"
-          icon={MessagesSquare}
-          description="Conversas únicas"
-        />
-        <KPICard
-          title="Mensagens do Mês"
-          value={chatMetrics?.messagesThisMonth || 0}
-          change={`${chatMetrics?.messagesThisWeek || 0} esta semana`}
-          changeType="positive"
-          icon={Activity}
-          description="Volume de mensagens"
-        />
-
-        {/* Métricas de Agenda (só para planos com agendamento) */}
-        {hasAgendamento && (
-          <>
-            <KPICard
-              title="Compromissos Hoje"
-              value={todayAppointments.length}
-              change={`${confirmedToday} confirmados`}
-              changeType="positive"
-              icon={Calendar}
-              description="Agenda do dia"
-            />
-            <KPICard
-              title="Taxa de Confirmação"
-              value={todayAppointments.length > 0 ? `${Math.round((confirmedToday / todayAppointments.length) * 100)}%` : "0%"}
-              change="Hoje"
-              changeType="positive"
-              icon={CheckCircle2}
-              description="Compromissos confirmados"
-            />
-            <KPICard
-              title="Próximos 7 Dias"
-              value={allAppointments.filter(apt => {
-                const aptDate = apt.start_datetime ? new Date(apt.start_datetime) : new Date(apt.date);
-                const nextWeek = new Date(today);
-                nextWeek.setDate(today.getDate() + 7);
-                return aptDate >= today && aptDate <= nextWeek;
-              }).length}
-              change="Agendados"
-              changeType="neutral"
-              icon={TrendingUp}
-              description="Próxima semana"
-            />
-          </>
-        )}
-
-        {/* Métricas de Pacientes (sempre visível) */}
-        <KPICard
-          title="Pacientes Totais"
-          value={patients.length}
-          change={`${activePatients} ativos`}
-          changeType="positive"
-          icon={Users}
-          description="Base de contatos"
-        />
-        <KPICard
-          title="Conversas na Semana"
-          value={chatMetrics?.conversationsThisWeek || 0}
-          change={`${chatMetrics?.messagesThisWeek || 0} mensagens`}
-          changeType="neutral"
-          icon={UserCheck}
-          description="Últimos 7 dias"
-        />
-      </div>
-
-      {/* Área Principal - Adaptada ao plano */}
-      {hasAgendamento ? (
-        /* Agenda de Hoje (para planos com agendamento) */
-        <Card className="card-luxury p-4 md:p-6 lg:p-8 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-          <div className="mb-4 md:mb-6">
-            <h2 className="font-display text-xl md:text-2xl font-semibold text-foreground mb-2">
-              Agenda de Hoje
-            </h2>
-            <p className="text-sm md:text-base text-muted-foreground">
-              {new Date().toLocaleDateString("pt-BR", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
+      {/* Agenda de Hoje - Movida para o início */}
+      {hasAgendamento && (
+        <Card className="card-luxury p-4 md:p-6 lg:p-8 animate-fade-in-up border-accent/20 shadow-lg hover:shadow-xl transition-all duration-300">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <div>
+              <h2 className="font-display text-xl md:text-2xl font-semibold text-foreground mb-2 flex items-center gap-2">
+                <Calendar className="h-5 w-5 md:h-6 md:w-6 text-accent" />
+                Agenda de Hoje
+              </h2>
+              <p className="text-sm md:text-base text-muted-foreground">
+                {new Date().toLocaleDateString("pt-BR", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.href = '/app/agenda'}
+              className="hidden sm:flex gap-2"
+            >
+              Ver Agenda Completa
+            </Button>
           </div>
 
           {todayAppointments.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center py-12 bg-gradient-to-br from-accent/5 to-transparent rounded-lg border border-dashed border-accent/20">
               <Calendar className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
               <p className="text-lg font-medium text-foreground mb-2">Nenhum compromisso hoje</p>
-              <p className="text-sm text-muted-foreground">Aproveite para descansar ou planejar sua semana</p>
+              <p className="text-sm text-muted-foreground mb-4">Aproveite para descansar ou planejar sua semana</p>
+              <Button
+                variant="outline"
+                onClick={() => setIsAppointmentModalOpen(true)}
+                className="gap-2"
+              >
+                <Calendar className="h-4 w-4" />
+                Agendar Compromisso
+              </Button>
             </div>
           ) : (
             <div className="space-y-3 md:space-y-4">
@@ -300,24 +236,28 @@ export default function Dashboard() {
                   return (
                     <div
                       key={appointment.id}
-                      className="flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4 rounded-lg border border-border/50 bg-background p-3 md:p-4 transition-all duration-300 hover:border-accent/50 hover:shadow-lg"
+                      onClick={() => window.location.href = '/app/agenda'}
+                      className="group flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4 rounded-lg border border-border/50 bg-gradient-to-r from-background to-accent/5 p-4 md:p-5 transition-all duration-300 hover:border-accent/50 hover:shadow-lg hover:scale-[1.02] cursor-pointer"
                       style={{ animationDelay: `${0.1 * index}s` }}
                     >
-                      <div className="flex h-14 w-14 md:h-16 md:w-16 shrink-0 flex-col items-center justify-center rounded-lg bg-accent/10">
+                      <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 flex-col items-center justify-center rounded-lg bg-gradient-to-br from-accent/20 to-accent/10 border border-accent/20 group-hover:from-accent/30 group-hover:to-accent/20 transition-all duration-300">
                         <span className="text-xs font-medium text-accent">{hours}</span>
-                        <span className="text-xl md:text-2xl font-bold text-accent">{minutes}</span>
+                        <span className="text-2xl md:text-3xl font-bold text-accent">{minutes}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-foreground truncate">{appointment.patient_name}</h4>
+                        <h4 className="font-semibold text-foreground truncate text-base md:text-lg mb-1">{appointment.patient_name}</h4>
                         <p className="text-sm text-muted-foreground">{appointment.type}</p>
+                        {appointment.observations && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{appointment.observations}</p>
+                        )}
                       </div>
                       <div
-                        className={`self-start sm:self-center rounded-full px-3 md:px-4 py-1 md:py-1.5 text-xs font-medium whitespace-nowrap ${
+                        className={`self-start sm:self-center rounded-full px-4 md:px-5 py-2 text-xs font-medium whitespace-nowrap transition-all duration-300 ${
                           appointment.status === "confirmed"
-                            ? "bg-success/10 text-success"
+                            ? "bg-green-500/10 text-green-600 border border-green-500/20"
                             : appointment.status === "pending"
-                            ? "bg-accent/10 text-accent"
-                            : "bg-muted text-muted-foreground"
+                            ? "bg-accent/10 text-accent border border-accent/20"
+                            : "bg-muted text-muted-foreground border border-border"
                         }`}
                       >
                         {appointment.status === "confirmed" ? "Confirmado" : appointment.status === "pending" ? "Pendente" : "Concluído"}
@@ -328,7 +268,132 @@ export default function Dashboard() {
             </div>
           )}
         </Card>
-      ) : (
+      )}
+
+      {/* KPI Grid - Adaptado ao plano */}
+      <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Métricas de Atendimento (sempre visível) */}
+        <div 
+          onClick={() => setIsReportsModalOpen(true)}
+          className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
+        >
+          <KPICard
+            title="Conversas Hoje"
+            value={chatMetrics?.conversationsToday || 0}
+            change={`${chatMetrics?.messagesToday || 0} mensagens`}
+            changeType="positive"
+            icon={MessageSquare}
+            description="Atendimentos do dia"
+          />
+        </div>
+        <div 
+          onClick={() => setIsReportsModalOpen(true)}
+          className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
+        >
+          <KPICard
+            title="Total de Conversas"
+            value={chatMetrics?.totalConversations || 0}
+            change={`${chatMetrics?.conversationsThisMonth || 0} este mês`}
+            changeType="positive"
+            icon={MessagesSquare}
+            description="Conversas únicas"
+          />
+        </div>
+        <div 
+          onClick={() => setIsReportsModalOpen(true)}
+          className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
+        >
+          <KPICard
+            title="Mensagens do Mês"
+            value={chatMetrics?.messagesThisMonth || 0}
+            change={`${chatMetrics?.messagesThisWeek || 0} esta semana`}
+            changeType="positive"
+            icon={Activity}
+            description="Volume de mensagens"
+          />
+        </div>
+
+        {/* Métricas de Agenda (só para planos com agendamento) */}
+        {hasAgendamento && (
+          <>
+            <div 
+              onClick={() => setIsTodayModalOpen(true)}
+              className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
+            >
+              <KPICard
+                title="Compromissos Hoje"
+                value={todayAppointments.length}
+                change={`${confirmedToday} confirmados`}
+                changeType="positive"
+                icon={Calendar}
+                description="Agenda do dia"
+              />
+            </div>
+            <div 
+              onClick={() => setIsReportsModalOpen(true)}
+              className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
+            >
+              <KPICard
+                title="Taxa de Confirmação"
+                value={todayAppointments.length > 0 ? `${Math.round((confirmedToday / todayAppointments.length) * 100)}%` : "0%"}
+                change="Hoje"
+                changeType="positive"
+                icon={CheckCircle2}
+                description="Compromissos confirmados"
+              />
+            </div>
+            <div 
+              onClick={() => window.location.href = '/app/agenda'}
+              className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
+            >
+              <KPICard
+                title="Próximos 7 Dias"
+                value={allAppointments.filter(apt => {
+                  const aptDate = apt.start_datetime ? new Date(apt.start_datetime) : new Date(apt.date);
+                  const nextWeek = new Date(today);
+                  nextWeek.setDate(today.getDate() + 7);
+                  return aptDate >= today && aptDate <= nextWeek;
+                }).length}
+                change="Agendados"
+                changeType="neutral"
+                icon={TrendingUp}
+                description="Próxima semana"
+              />
+            </div>
+          </>
+        )}
+
+        {/* Métricas de Pacientes (sempre visível) */}
+        <div 
+          onClick={() => window.location.href = '/app/clientes/crm'}
+          className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
+        >
+          <KPICard
+            title="Pacientes Totais"
+            value={patients.length}
+            change={`${activePatients} ativos`}
+            changeType="positive"
+            icon={Users}
+            description="Base de contatos"
+          />
+        </div>
+        <div 
+          onClick={() => setIsReportsModalOpen(true)}
+          className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
+        >
+          <KPICard
+            title="Conversas na Semana"
+            value={chatMetrics?.conversationsThisWeek || 0}
+            change={`${chatMetrics?.messagesThisWeek || 0} mensagens`}
+            changeType="neutral"
+            icon={UserCheck}
+            description="Últimos 7 dias"
+          />
+        </div>
+      </div>
+
+      {/* Área Principal - Adaptada ao plano */}
+      {!hasAgendamento && (
         /* Resumo de Atendimentos (para planos sem agendamento) */
         <Card className="card-luxury p-4 md:p-6 lg:p-8 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
           <div className="mb-4 md:mb-6">
@@ -428,23 +493,23 @@ export default function Dashboard() {
           <>
             <button 
               onClick={() => setIsTodayModalOpen(true)}
-              className="card-luxury group p-5 md:p-6 text-left transition-all hover-glow"
+              className="card-luxury group p-5 md:p-6 text-left transition-all duration-300 hover:shadow-xl hover:scale-105 hover:border-accent/50 bg-gradient-to-br from-background to-accent/5"
             >
-              <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+              <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-gradient-to-br from-accent/20 to-accent/10 group-hover:from-accent/30 group-hover:to-accent/20 transition-all duration-300 shadow-md">
                 <Clock className="h-5 w-5 md:h-6 md:w-6 text-accent" />
               </div>
-              <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Hoje</h3>
+              <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground group-hover:text-accent transition-colors">Hoje</h3>
               <p className="text-sm text-muted-foreground">Ver compromissos de hoje</p>
             </button>
 
             <button 
               onClick={() => setIsAppointmentModalOpen(true)}
-              className="card-luxury group p-5 md:p-6 text-left transition-all hover-glow"
+              className="card-luxury group p-5 md:p-6 text-left transition-all duration-300 hover:shadow-xl hover:scale-105 hover:border-accent/50 bg-gradient-to-br from-background to-accent/5"
             >
-              <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+              <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-gradient-to-br from-accent/20 to-accent/10 group-hover:from-accent/30 group-hover:to-accent/20 transition-all duration-300 shadow-md">
                 <Calendar className="h-5 w-5 md:h-6 md:w-6 text-accent" />
               </div>
-              <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Novo Compromisso</h3>
+              <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground group-hover:text-accent transition-colors">Novo Compromisso</h3>
               <p className="text-sm text-muted-foreground">Agende um novo atendimento</p>
             </button>
           </>
@@ -452,23 +517,23 @@ export default function Dashboard() {
           <>
             <button 
               onClick={() => setIsReportsModalOpen(true)}
-              className="card-luxury group p-5 md:p-6 text-left transition-all hover-glow"
+              className="card-luxury group p-5 md:p-6 text-left transition-all duration-300 hover:shadow-xl hover:scale-105 hover:border-accent/50 bg-gradient-to-br from-background to-accent/5"
             >
-              <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+              <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-gradient-to-br from-accent/20 to-accent/10 group-hover:from-accent/30 group-hover:to-accent/20 transition-all duration-300 shadow-md">
                 <MessageSquare className="h-5 w-5 md:h-6 md:w-6 text-accent" />
               </div>
-              <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Atendimentos</h3>
+              <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground group-hover:text-accent transition-colors">Atendimentos</h3>
               <p className="text-sm text-muted-foreground">Ver métricas detalhadas</p>
             </button>
 
             <button 
               onClick={() => window.location.href = '/app/agent-ia'}
-              className="card-luxury group p-5 md:p-6 text-left transition-all hover-glow"
+              className="card-luxury group p-5 md:p-6 text-left transition-all duration-300 hover:shadow-xl hover:scale-105 hover:border-accent/50 bg-gradient-to-br from-background to-accent/5"
             >
-              <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+              <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-gradient-to-br from-accent/20 to-accent/10 group-hover:from-accent/30 group-hover:to-accent/20 transition-all duration-300 shadow-md">
                 <Activity className="h-5 w-5 md:h-6 md:w-6 text-accent" />
               </div>
-              <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Configurar Assistente Virtual</h3>
+              <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground group-hover:text-accent transition-colors">Configurar Assistente Virtual</h3>
               <p className="text-sm text-muted-foreground">Ajuste seu atendimento IA</p>
             </button>
           </>
@@ -476,23 +541,23 @@ export default function Dashboard() {
 
         <button 
           onClick={() => setIsPatientModalOpen(true)}
-          className="card-luxury group p-5 md:p-6 text-left transition-all hover-glow"
+          className="card-luxury group p-5 md:p-6 text-left transition-all duration-300 hover:shadow-xl hover:scale-105 hover:border-accent/50 bg-gradient-to-br from-background to-accent/5"
         >
-          <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+          <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-gradient-to-br from-accent/20 to-accent/10 group-hover:from-accent/30 group-hover:to-accent/20 transition-all duration-300 shadow-md">
             <Users className="h-5 w-5 md:h-6 md:w-6 text-accent" />
           </div>
-          <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Adicionar Contato</h3>
+          <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground group-hover:text-accent transition-colors">Adicionar Contato</h3>
           <p className="text-sm text-muted-foreground">Cadastre um novo contato</p>
         </button>
 
         <button 
           onClick={() => setIsReportsModalOpen(true)}
-          className="card-luxury group p-5 md:p-6 text-left transition-all hover-glow"
+          className="card-luxury group p-5 md:p-6 text-left transition-all duration-300 hover:shadow-xl hover:scale-105 hover:border-accent/50 bg-gradient-to-br from-background to-accent/5"
         >
-          <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+          <div className="mb-3 md:mb-4 flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-gradient-to-br from-accent/20 to-accent/10 group-hover:from-accent/30 group-hover:to-accent/20 transition-all duration-300 shadow-md">
             <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-accent" />
           </div>
-          <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground">Ver Relatórios</h3>
+          <h3 className="mb-1.5 md:mb-2 font-semibold text-foreground group-hover:text-accent transition-colors">Ver Relatórios</h3>
           <p className="text-sm text-muted-foreground">Analise suas métricas</p>
         </button>
       </div>

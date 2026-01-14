@@ -99,41 +99,42 @@ export default function Organizations() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+      <div className="flex items-center justify-center h-96 bg-black">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-pink-500 border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-black min-h-screen p-6">
       {/* Page Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-blue-100">Organizações</h1>
-          <p className="text-blue-400 mt-1">
+          <h1 className="text-3xl font-bold text-white">Clínicas</h1>
+          <p className="text-gray-400 mt-1">
             Gerencie todas as clínicas e consultórios
           </p>
         </div>
         <Button
           onClick={() => navigate("/super-admin/organizations/new")}
-          className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+          className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white shadow-lg shadow-pink-500/50 hover:shadow-pink-500/70 transition-all duration-200 hover:scale-105"
+          size="lg"
         >
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Organização
+          <Plus className="mr-2 h-5 w-5" />
+          Nova Clínica
         </Button>
       </div>
 
       {/* Search */}
-      <Card className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl">
+      <Card className="border-pink-500/30 bg-black/80 backdrop-blur-xl">
         <CardContent className="pt-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-pink-500" />
             <Input
               placeholder="Buscar por nome ou slug..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-slate-800/40 border-blue-800/30 text-blue-100 placeholder:text-blue-400/50"
+              className="pl-10 bg-black/60 border-pink-500/30 text-white placeholder:text-gray-400/50"
             />
           </div>
         </CardContent>
@@ -144,13 +145,13 @@ export default function Organizations() {
         {filteredOrganizations?.map((org) => (
           <Card
             key={org.id}
-            className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl hover:border-blue-600/50 transition-all"
+            className="border-pink-500/30 bg-black/80 backdrop-blur-xl hover:border-pink-600/50 transition-all"
           >
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <CardTitle className="text-blue-100">{org.name}</CardTitle>
-                  <CardDescription className="text-blue-400 mt-1">
+                  <CardTitle className="text-white">{org.name}</CardTitle>
+                  <CardDescription className="text-gray-400 mt-1">
                     {org.slug}
                   </CardDescription>
                 </div>
@@ -158,8 +159,8 @@ export default function Organizations() {
                   variant={org.is_active ? "default" : "destructive"}
                   className={
                     org.is_active
-                      ? "bg-green-600/20 text-green-300 hover:bg-green-600/30"
-                      : "bg-red-600/20 text-red-300 hover:bg-red-600/30"
+                      ? "bg-pink-600/20 text-pink-300 hover:bg-pink-600/30"
+                      : "bg-gray-600/20 text-gray-300 hover:bg-gray-600/30"
                   }
                 >
                   {org.is_active ? "Ativa" : "Inativa"}
@@ -167,7 +168,7 @@ export default function Organizations() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-xs text-blue-400 mb-4">
+              <div className="text-xs text-gray-400 mb-4">
                 Criada em {new Date(org.created_at).toLocaleDateString("pt-BR")}
               </div>
               <div className="flex gap-2">
@@ -175,7 +176,7 @@ export default function Organizations() {
                   variant="outline"
                   size="sm"
                   onClick={() => navigate(`/super-admin/organizations/${org.id}/edit`)}
-                  className="flex-1 border-blue-600/30 text-blue-300 hover:bg-blue-800/30 hover:text-blue-100"
+                  className="flex-1 border-pink-600/30 text-pink-300 hover:bg-pink-800/30 hover:text-pink-100"
                 >
                   <Pencil className="mr-2 h-4 w-4" />
                   Editar
@@ -184,10 +185,10 @@ export default function Organizations() {
                   variant="outline"
                   size="sm"
                   onClick={() => setToggleOrgId(org.id)}
-                  className={`border-blue-600/30 ${
+                  className={`border-pink-600/30 ${
                     org.is_active
                       ? "text-red-300 hover:bg-red-900/30 hover:text-red-100"
-                      : "text-green-300 hover:bg-green-900/30 hover:text-green-100"
+                      : "text-pink-300 hover:bg-pink-900/30 hover:text-pink-100"
                   }`}
                 >
                   {org.is_active ? (
@@ -211,9 +212,9 @@ export default function Organizations() {
       </div>
 
       {(!filteredOrganizations || filteredOrganizations.length === 0) && (
-        <Card className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl">
+        <Card className="border-pink-500/30 bg-black/80 backdrop-blur-xl">
           <CardContent className="py-12 text-center">
-            <p className="text-blue-400">
+            <p className="text-gray-400">
               {searchQuery
                 ? "Nenhuma organização encontrada com esse termo"
                 : "Nenhuma organização cadastrada ainda"}
@@ -224,19 +225,19 @@ export default function Organizations() {
 
       {/* Toggle Status Dialog */}
       <AlertDialog open={toggleOrgId !== null} onOpenChange={() => setToggleOrgId(null)}>
-        <AlertDialogContent className="bg-slate-900 border-blue-800/30">
+        <AlertDialogContent className="bg-black border-pink-500/30">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-blue-100">
+            <AlertDialogTitle className="text-white">
               Confirmar Ação
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-blue-400">
+            <AlertDialogDescription className="text-gray-400">
               {organizations?.find((o) => o.id === toggleOrgId)?.is_active
                 ? "Desativar esta organização impedirá o acesso de todos os usuários vinculados."
                 : "Ativar esta organização permitirá o acesso de todos os usuários vinculados."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-slate-800 text-blue-300 hover:bg-slate-700">
+            <AlertDialogCancel className="bg-black/60 text-gray-300 hover:bg-black/80 border-pink-500/30">
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
@@ -249,7 +250,7 @@ export default function Organizations() {
                   });
                 }
               }}
-              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+              className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700"
             >
               Confirmar
             </AlertDialogAction>
@@ -259,18 +260,18 @@ export default function Organizations() {
 
       {/* Delete Organization Dialog */}
       <AlertDialog open={deleteOrgId !== null} onOpenChange={() => setDeleteOrgId(null)}>
-        <AlertDialogContent className="bg-slate-900 border-red-800/30">
+        <AlertDialogContent className="bg-black border-red-800/30">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-red-100 flex items-center gap-2">
               <Trash2 className="h-5 w-5" />
               Excluir Organização
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-blue-400 space-y-2">
+            <AlertDialogDescription className="text-gray-400 space-y-2">
               <p className="font-semibold text-red-400">
                 ⚠️ ATENÇÃO: Esta ação é irreversível!
               </p>
               <p>
-                Ao excluir a organização "<strong className="text-blue-100">{organizations?.find((o) => o.id === deleteOrgId)?.name}</strong>", 
+                Ao excluir a organização "<strong className="text-white">{organizations?.find((o) => o.id === deleteOrgId)?.name}</strong>", 
                 os seguintes dados serão permanentemente apagados:
               </p>
               <ul className="list-disc list-inside space-y-1 text-sm">
@@ -288,7 +289,7 @@ export default function Organizations() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-slate-800 text-blue-300 hover:bg-slate-700">
+            <AlertDialogCancel className="bg-black/60 text-gray-300 hover:bg-black/80 border-pink-500/30">
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction

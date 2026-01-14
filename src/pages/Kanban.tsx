@@ -377,7 +377,7 @@ export default function Kanban() {
             Kanban
           </h1>
           <p className="text-base md:text-lg text-muted-foreground">
-            Gerencie seu funil de vendas
+            Status de atendimento dos pacientes
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -391,7 +391,7 @@ export default function Kanban() {
             <DialogHeader>
               <DialogTitle>Novo Contato</DialogTitle>
               <DialogDescription>
-                Adicione um novo lead ao seu pipeline
+                Adicione um novo contato ao seu status de atendimento
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -453,7 +453,7 @@ export default function Kanban() {
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Carregando leads...</p>
+              <p className="text-muted-foreground">Carregando contatos...</p>
             </div>
           </div>
         ) : (

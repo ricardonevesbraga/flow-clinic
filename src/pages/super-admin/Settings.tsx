@@ -76,25 +76,25 @@ export default function SuperAdminSettings() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-black min-h-screen p-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-blue-100">Configurações</h1>
-        <p className="text-blue-400 mt-1">
+        <h1 className="text-3xl font-bold text-white">Configurações</h1>
+        <p className="text-gray-400 mt-1">
           Configurações gerais do sistema
         </p>
       </div>
 
       {/* Support WhatsApp Card */}
-      <Card className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl">
+      <Card className="border-pink-500/30 bg-black/80 backdrop-blur-xl">
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-emerald-500">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-rose-500">
               <MessageCircle className="h-5 w-5 text-white" />
             </div>
             <div>
-              <CardTitle className="text-blue-100">WhatsApp de Suporte</CardTitle>
-              <CardDescription className="text-blue-400">
+              <CardTitle className="text-white">WhatsApp de Suporte</CardTitle>
+              <CardDescription className="text-gray-400">
                 Configure o número de WhatsApp que aparecerá como botão de suporte para todos os usuários
               </CardDescription>
             </div>
@@ -103,12 +103,12 @@ export default function SuperAdminSettings() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-pink-500 border-t-transparent"></div>
             </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="support_whatsapp" className="text-blue-200">
+                <Label htmlFor="support_whatsapp" className="text-white">
                   Número de WhatsApp (formato internacional)
                 </Label>
                 <Input
@@ -116,12 +116,12 @@ export default function SuperAdminSettings() {
                   type="tel"
                   {...register("support_whatsapp")}
                   placeholder="5511999999999"
-                  className="bg-slate-800/40 border-blue-800/30 text-blue-100 placeholder:text-blue-400/50"
+                  className="bg-black/60 border-pink-500/30 text-white placeholder:text-gray-400/50"
                 />
-                <p className="text-xs text-blue-400">
+                <p className="text-xs text-gray-400">
                   Digite o número no formato internacional sem espaços ou caracteres especiais (ex: 5511999999999)
                 </p>
-                <p className="text-xs text-blue-400 mt-2">
+                <p className="text-xs text-gray-400 mt-2">
                   Este número será exibido como um botão flutuante verde no canto inferior direito para todos os usuários de todas as organizações.
                 </p>
                 {errors.support_whatsapp && (
@@ -132,7 +132,7 @@ export default function SuperAdminSettings() {
               <Button
                 type="submit"
                 disabled={isSaving}
-                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white"
               >
                 {isSaving ? (
                   <>
@@ -152,15 +152,15 @@ export default function SuperAdminSettings() {
       </Card>
 
       {/* OpenAI API Key Card */}
-      <Card className="border-blue-800/30 bg-slate-900/40 backdrop-blur-xl">
+      <Card className="border-pink-500/30 bg-black/80 backdrop-blur-xl">
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-rose-500">
               <SettingsIcon className="h-5 w-5 text-white" />
             </div>
             <div>
-              <CardTitle className="text-blue-100">API Key OpenAI</CardTitle>
-              <CardDescription className="text-blue-400">
+              <CardTitle className="text-white">API Key OpenAI</CardTitle>
+              <CardDescription className="text-gray-400">
                 Configure a chave de API OpenAI usada por todas as organizações
               </CardDescription>
             </div>
@@ -169,12 +169,12 @@ export default function SuperAdminSettings() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-pink-500 border-t-transparent"></div>
             </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="openai_api_key" className="text-blue-200">
+                <Label htmlFor="openai_api_key" className="text-white">
                   Chave de API OpenAI
                 </Label>
                 <Input
@@ -182,12 +182,12 @@ export default function SuperAdminSettings() {
                   type="password"
                   {...register("openai_api_key")}
                   placeholder="sk-..."
-                  className="bg-slate-800/40 border-blue-800/30 text-blue-100 placeholder:text-blue-400/50 font-mono"
+                  className="bg-black/60 border-pink-500/30 text-white placeholder:text-gray-400/50 font-mono"
                 />
-                <p className="text-xs text-blue-400">
+                <p className="text-xs text-gray-400">
                   Esta chave será usada por todas as organizações para funcionalidades de IA como confirmação de agendamento por e-mail, respostas automáticas, etc.
                 </p>
-                <p className="text-xs text-blue-400 mt-2">
+                <p className="text-xs text-gray-400 mt-2">
                   ⚠️ Esta configuração é global e afeta todas as organizações do sistema.
                 </p>
                 {errors.openai_api_key && (
@@ -198,7 +198,7 @@ export default function SuperAdminSettings() {
               <Button
                 type="submit"
                 disabled={isSaving}
-                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white"
               >
                 {isSaving ? (
                   <>
